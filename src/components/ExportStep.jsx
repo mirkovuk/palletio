@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Previews from './Previews.jsx';
 import LogoTest from './LogoTest.jsx';
 import { VIBES } from '../lib/vibes.js';
-import { findImages, TREATMENTS, VIBE_QUERIES } from '../lib/imagery.js';
+import { findImages, TREATMENTS, VIBE_QUERIES, duotoneCandidates, registerUse } from '../lib/imagery.js';
 import { surfaceMap } from '../lib/vibes.js';
 import { CVD_TYPES } from '../lib/color.js';
 import { buildPairings } from '../lib/roles.js';
@@ -38,9 +38,25 @@ export default function ExportStep({
 
   /* Duotone endpoints default to the palette's text and page colours — the
      darkest and lightest things you actually chose — and can be overridden. */
-  const shadow = colors.includes(imageState.shadow) ? imageState.shadow : map.ink;
-  const highlight = colors.includes(imageState.highlight) ? imageState.highlight : map.page;
-  const previewMap = { ...map, duotoneShadow: shadow, duotoneHighlight: highlight };
+  const shadowOptions = duotoneCandidates(colors, 'shadow');
+  const highlightOptions = duotoneCandidates(colors, 'highlight');
+  const shadow = shadowOptions.includes(imageState.shadow) ? imageState.shadow : shadowOptions[0] || map.ink;
+  const highlight = highlightOptions.includes(imageState.highlight)
+    ? imageState.highlight
+    : highlightOptions[0] || map.page;
+
+  const previewMap = {
+    ...map,
+    duotoneShadow: shadow,
+    duotoneHighlight: highlight,
+    useHighlight: imageState.useHighlight !== false,
+  };
+
+  const pickImage = (img) => {
+    setImage({ selected: img });
+    // Required by the Unsplash API licence whenever a photo is put to use.
+    registerUse(img, settings?.unsplashKey);
+  };
 
   const loadImages = async () => {
     setImageBusy(true);
@@ -51,12 +67,9 @@ export default function ExportStep({
         hero,
         settings,
       });
-      setImage({
-        images: result.images,
-        source: result.source,
-        selected: result.images[0] || null,
-        on: true,
-      });
+      const first = result.images[0] || null;
+      setImage({ images: result.images, source: result.source, selected: first, on: true });
+      registerUse(first, settings?.unsplashKey);
     } catch (e) {
       setImageError(e.message || 'Could not load imagery.');
     } finally {
@@ -185,7 +198,7 @@ export default function ExportStep({
                     key={img.id}
                     className="image-thumb"
                     aria-pressed={selected?.id === img.id}
-                    onClick={() => setImage({ selected: img })}
+                    onClick={() => pickImage(img)}
                   >
                     <img src={img.thumb} alt="" loading="lazy" />
                   </button>
@@ -216,7 +229,7 @@ export default function ExportStep({
                     <div className="field">
                       <span className="label">Shadows</span>
                       <div className="chip-row">
-                        {colors.map((hex) => (
+                        {shadowOptions.map((hex) => (
                           <button
                             key={hex} className="chip-pick" title={hex}
                             onClick={() => setImage({ shadow: hex })}
@@ -229,12 +242,26 @@ export default function ExportStep({
                         ))}
                       </div>
                     </div>
+
                     <div className="field">
-                      <span className="label">Highlights</span>
-                      <div className="chip-row">
-                        {colors.map((hex) => (
+                      <div className="picker-row-label" style={{ gap: 'var(--space-3)' }}>
+                        <span className="label">Highlights</span>
+                        <button
+                          className="btn btn-sm btn-ghost"
+                          onClick={() => setImage({ useHighlight: previewMap.useHighlight === false })}
+                          style={{ padding: '0 var(--space-2)' }}
+                        >
+                          {previewMap.useHighlight === false ? 'Off' : 'On'}
+                        </button>
+                      </div>
+                      <div
+                        className="chip-row"
+                        style={{ opacity: previewMap.useHighlight === false ? 0.3 : 1 }}
+                      >
+                        {highlightOptions.map((hex) => (
                           <button
                             key={hex} className="chip-pick" title={hex}
+                            disabled={previewMap.useHighlight === false}
                             onClick={() => setImage({ highlight: hex })}
                             style={highlight === hex
                               ? { borderColor: 'var(--border-focus)', borderWidth: 2 }
@@ -251,7 +278,11 @@ export default function ExportStep({
 
               <p className="panel-note">
                 {TREATMENTS.find((t) => t.id === treatment)?.note}
-                {treatment === 'duotone' && ` · Currently mapping shadows to ${shadow} and highlights to ${highlight}.`}
+                {treatment === 'duotone' && (
+                  previewMap.useHighlight === false
+                    ? ` · Monotone: shadows tinted ${shadow}, highlights left alone. Usually blends into a layout better than a full duotone.`
+                    : ` · Shadows ${shadow}, highlights ${highlight}. Only colours that work in each slot are offered — a pale shadow or a near-black highlight does nothing.`
+                )}
                 {source === 'picsum' && ' · Using Lorem Picsum, which needs no key but ignores the subject. Add an Unsplash access key in Settings for images matched to your palette and vibe.'}
                 {source === 'unsplash' && ' · Photographs from Unsplash, filtered towards your hero colour.'}
               </p>
@@ -271,6 +302,19 @@ export default function ExportStep({
           imageStrength={strength}
           overrideMap={previewMap}
         />
+
+        {imageOn && selected && (
+          <p className="panel-note" style={{ marginTop: 'var(--space-4)' }}>
+            Photo by{' '}
+            <a href={selected.creditUrl} target="_blank" rel="noreferrer noopener">{selected.credit}</a>
+            {' '}on{' '}
+            <a href={selected.sourceUrl || selected.creditUrl} target="_blank" rel="noreferrer noopener">
+              {selected.sourceName || 'Unsplash'}
+            </a>
+            . Credit travels with the image into the previews — replace it with your own licensed
+            photography before anything goes to a client.
+          </p>
+        )}
       </div>
 
       <div className="panel">

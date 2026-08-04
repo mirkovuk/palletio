@@ -92,12 +92,37 @@ async function unsplashSearch(query, accessKey, colorBucket) {
     id: photo.id,
     url: photo.urls.regular,
     thumb: photo.urls.thumb,
-    // Unsplash's API terms require crediting the photographer wherever an
-    // image is displayed. Carried through so the previews can show it.
+    // Unsplash's API terms require the photographer credited wherever the
+    // image appears, both names linked back, and the links tagged so they
+    // can see the referral. All carried through to the previews and exports.
     credit: photo.user?.name || 'Unsplash',
-    creditUrl: photo.user?.links?.html || 'https://unsplash.com',
+    creditUrl: withUTM(photo.user?.links?.html || 'https://unsplash.com'),
+    sourceName: 'Unsplash',
+    sourceUrl: withUTM('https://unsplash.com'),
     link: photo.links?.html,
+    // Hitting this endpoint when a photo is actually used is a condition of
+    // the API licence, not an analytics nicety.
+    downloadLocation: photo.links?.download_location,
   }));
+}
+
+const UTM = 'utm_source=palletio&utm_medium=referral';
+
+function withUTM(url) {
+  if (!url) return url;
+  return url + (url.includes('?') ? '&' : '?') + UTM;
+}
+
+/**
+ * Unsplash requires a request to the photo's download endpoint whenever an
+ * image is put to use — it is how photographers get credited with a download.
+ * Fire-and-forget: a failure here should never interrupt the preview.
+ */
+export function registerUse(image, accessKey) {
+  if (!image?.downloadLocation || !accessKey) return;
+  fetch(image.downloadLocation, {
+    headers: { Authorization: `Client-ID ${accessKey}` },
+  }).catch(() => {});
 }
 
 /**
@@ -123,6 +148,8 @@ export async function findImages({ query, hero, settings, count = 6 }) {
     thumb: picsumURL(`${query}-${i}`, 200, 140),
     credit: 'Lorem Picsum',
     creditUrl: 'https://picsum.photos',
+    sourceName: 'Lorem Picsum',
+    sourceUrl: 'https://picsum.photos',
   }));
   return { source: 'picsum', images };
 }
@@ -160,7 +187,10 @@ export function duotoneLayers(shadowHex, highlightHex) {
  * dialling it down doesn't leave a grey photo with a colour wash on top —
  * it genuinely returns towards the original.
  */
-export function treatmentStyles(treatment, { shadow, highlight, hero, strength = 1 }) {
+export function treatmentStyles(
+  treatment,
+  { shadow, highlight, hero, strength = 1, useHighlight = true }
+) {
   const s = Math.max(0, Math.min(1, strength));
 
   if (treatment === 'original' || s === 0) return { filter: 'none', layers: [] };
@@ -173,13 +203,35 @@ export function treatmentStyles(treatment, { shadow, highlight, hero, strength =
   }
 
   const { dark, light } = duotoneLayers(shadow, highlight);
+  const layers = [{ background: dark, mixBlendMode: 'lighten', opacity: s }];
+
+  /* The highlight layer is what makes a duotone a duotone, but it also lifts
+     the whites towards a single flat colour, which can read as a wash sitting
+     on top of the photograph rather than part of it. Without it you get a
+     monotone: shadows tinted, highlights left as they are. Often the better
+     result, so it is optional. */
+  if (useHighlight) {
+    layers.push({ background: light, mixBlendMode: 'multiply', opacity: s });
+  }
+
   return {
     filter: `grayscale(${s}) contrast(${1 + 0.08 * s})`,
-    layers: [
-      { background: dark, mixBlendMode: 'lighten', opacity: s },
-      { background: light, mixBlendMode: 'multiply', opacity: s },
-    ],
+    layers,
   };
+}
+
+/**
+ * Which palette colours actually work in each duotone slot. Offering all of
+ * them is a false choice — a pale yellow as the shadow end produces nothing,
+ * and a near-black highlight collapses the image into a silhouette.
+ */
+export function duotoneCandidates(colors, slot) {
+  const scored = colors
+    .map((hex) => ({ hex, L: hexToOklch(hex).L }))
+    .sort((a, b) => (slot === 'shadow' ? a.L - b.L : b.L - a.L));
+
+  const usable = scored.filter((c) => (slot === 'shadow' ? c.L < 0.55 : c.L > 0.45));
+  return (usable.length ? usable : scored.slice(0, 3)).map((c) => c.hex);
 }
 
 /**

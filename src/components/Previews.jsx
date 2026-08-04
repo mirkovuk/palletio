@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { getVibe, surfaceMap } from '../lib/vibes.js';
 import { simulateCVD, bestTextOn, mix, hexToOklch, oklchToHex } from '../lib/color.js';
 import { treatmentStyles } from '../lib/imagery.js';
@@ -10,32 +10,61 @@ import { treatmentStyles } from '../lib/imagery.js';
  * proportions they will actually occupy.
  */
 function Scaled({ width, height, children }) {
-  const wrapRef = useRef(null);
-  const [scale, setScale] = useState(1);
+  const probeRef = useRef(null);
+  const [scale, setScale] = useState(0);
 
-  useEffect(() => {
-    const el = wrapRef.current;
+  /**
+   * The measurement has to come from an element that carries no content,
+   * because the thing being measured cannot also be the thing being sized.
+   *
+   * Previously the observed element was the clipping box itself, at
+   * width: 100%. A percentage width resolves against the containing block,
+   * and the containing block's width was in turn influenced by this box's
+   * 1200px child — so the fixed-size preview inflated its own container,
+   * the measurement came back as 1200, scale stayed at 1, and the preview
+   * ran straight out of the panel and over the sidebar. `overflow: hidden`
+   * stops it painting outside, but it does not stop a fixed-width child
+   * contributing to an ancestor's intrinsic width.
+   *
+   * A zero-height probe has no children, so it can only ever report the
+   * width genuinely available. The clipping box then gets an explicit pixel
+   * width derived from that, and is incapable of exceeding it.
+   */
+  useLayoutEffect(() => {
+    const el = probeRef.current;
     if (!el) return;
-    const observer = new ResizeObserver(([entry]) => {
-      setScale(Math.min(1, entry.contentRect.width / width));
-    });
+    const measure = (available) => {
+      if (available > 0) setScale(Math.min(1, available / width));
+    };
+    measure(el.getBoundingClientRect().width);
+    const observer = new ResizeObserver(([entry]) => measure(entry.contentRect.width));
     observer.observe(el);
     return () => observer.disconnect();
   }, [width]);
 
   return (
-    <div ref={wrapRef} style={{ width: '100%', height: height * scale, overflow: 'hidden' }}>
+    <>
+      <div ref={probeRef} style={{ width: '100%', height: 0 }} aria-hidden="true" />
       <div
         style={{
-          width,
-          height,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
+          width: scale ? width * scale : '100%',
+          height: scale ? height * scale : 0,
+          overflow: 'hidden',
+          maxWidth: '100%',
         }}
       >
-        {children}
+        <div
+          style={{
+            width,
+            height,
+            transform: `scale(${scale || 0.0001})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -45,13 +74,14 @@ function Scaled({ width, height, children }) {
  * avoids a CORS round trip on every image and keeps it live as the palette
  * changes.
  */
-function TreatedImage({ image, treatment, map, style, strength = 1 }) {
+function TreatedImage({ image, treatment, map, style, strength = 1, creditColor }) {
   if (!image) return null;
   const { filter, layers } = treatmentStyles(treatment, {
     shadow: map.duotoneShadow || map.ink,
     highlight: map.duotoneHighlight || map.page,
     hero: map.hero,
     strength,
+    useHighlight: map.useHighlight !== false,
   });
 
   return (
@@ -60,6 +90,11 @@ function TreatedImage({ image, treatment, map, style, strength = 1 }) {
       {layers.map((layer, i) => (
         <span key={i} className="image-tint" style={layer} />
       ))}
+      {/* Credit sits on the image itself, not only in the caption above it,
+          because the caption is chrome and would not survive an export. */}
+      <span className="image-credit" style={{ color: creditColor }}>
+        {image.credit} / {image.sourceName || 'Unsplash'}
+      </span>
     </div>
   );
 }
@@ -159,6 +194,7 @@ function HeroPreview({ map, vibe, cv, image, treatment, imageStrength }) {
           /* Right-hand half only, fading out towards the text column. An
              image behind the headline makes the headline unreadable no
              matter how good the contrast score says it is. */
+          creditColor={c(map.page)}
           style={{
             inset: '0 0 0 46%',
             maskImage: 'linear-gradient(90deg, transparent 0%, #000 22%)',
@@ -319,15 +355,21 @@ function SocialPreview({ map, vibe, cv, image, treatment, imageStrength }) {
     >
       {image ? (
         <>
-          <TreatedImage image={image} treatment={treatment} map={map} strength={imageStrength} />
+          <TreatedImage
+            image={image}
+            treatment={treatment}
+            map={map}
+            strength={imageStrength}
+            creditColor={c(onHero)}
+          />
           {/* Type over a photograph needs a scrim regardless of contrast
               score — the score assumes a flat ground, and a photo is not one. */}
           <span
             style={{
               position: 'absolute',
               inset: 0,
-              background: `linear-gradient(0deg, ${c(map.hero)} 4%, transparent 62%)`,
-              opacity: 0.92,
+              background: `linear-gradient(180deg, ${c(map.hero)} 8%, transparent 58%, ${c(map.hero)} 96%)`,
+              opacity: 0.9,
             }}
           />
         </>
@@ -354,21 +396,20 @@ function SocialPreview({ map, vibe, cv, image, treatment, imageStrength }) {
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
             opacity: 0.8,
+            marginBottom: 14,
           }}
         >
           New work
         </div>
 
-        <div style={{ flex: 1 }} />
-
         <h2
           style={{
             fontFamily: vibe.display,
             fontWeight: vibe.displayWeight,
-            fontSize: 46 * vibe.heroScale,
+            fontSize: 44 * vibe.heroScale,
             lineHeight: 1.03,
             letterSpacing: vibe.displayTracking,
-            margin: '0 0 18px',
+            margin: '0 0 16px',
           }}
         >
           Nine colours,
@@ -376,24 +417,12 @@ function SocialPreview({ map, vibe, cv, image, treatment, imageStrength }) {
           one decision.
         </h2>
 
-        <p style={{ fontSize: 15, lineHeight: 1.5, opacity: 0.85, margin: '0 0 28px', maxWidth: 300 }}>
+        <p style={{ fontSize: 15, lineHeight: 1.5, opacity: 0.85, margin: 0, maxWidth: 300 }}>
           An identity system for a lighting studio at the end of the continent, built from weather
           data and a single warm neutral.
         </p>
 
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-          {map.all.slice(0, 8).map((hex, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                height: 28,
-                background: c(hex),
-                borderRadius: vibe.radius === '999px' ? '999px' : vibe.radius,
-              }}
-            />
-          ))}
-        </div>
+        <div style={{ flex: 1 }} />
 
         <div
           style={{

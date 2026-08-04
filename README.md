@@ -100,10 +100,21 @@ luminance and remapped between two of your palette colours via CSS blend modes.
 It contributes composition and texture without a single foreign hue. Tinted and
 Original are available; Original is honest about the trade.
 
+The highlight layer is optional. With it, you get a true duotone; without it, a
+monotone — shadows tinted, highlights left alone — which usually sits more
+naturally in a layout. Blend runs 0–100%, dialling back desaturation and tint
+together so partial settings return towards the original rather than leaving a
+grey photo under a colour wash. Only palette colours that actually work in each
+slot are offered.
+
 No key needed — Lorem Picsum works out of the box but ignores the subject. An
 Unsplash Access Key in Settings enables real search plus their colour filter, so
 images come back already near your palette. Access Keys are public by design
 and safe in a browser.
+
+Unsplash attribution is handled: the photographer is credited on the image
+itself and under the previews, both links carry the required UTM tags, and
+using a photo fires their download endpoint as the API licence requires.
 
 ## The colour picker
 

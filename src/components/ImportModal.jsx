@@ -169,31 +169,84 @@ export default function ImportModal({ onClose, onImport, settings, onToast }) {
 
         {tab === 'url' && (
           <div className="col">
-            <div className="field">
-              <label className="label" htmlFor="url">Website address</label>
-              <input
-                id="url"
-                className="input"
-                placeholder="https://example.com"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-              />
-            </div>
-            <button
-              className="btn btn-primary"
-              disabled={busy}
-              onClick={() => run(async () => {
-                const found = await extractFromURL(urlInput, settings.proxyUrl);
-                present(found.map((x) => x.hex), 'Ordered by how often each colour appears on the page.');
-              })}
-            >
-              {busy ? 'Fetching…' : 'Fetch colours'}
-            </button>
-            <p className="panel-note">
-              A browser cannot read another site directly — that is a security rule, not a limitation
-              of this tool. Set a proxy address in Settings to enable this, or use the Image tab with
-              a screenshot, which needs no setup at all.
-            </p>
+            {!settings.proxyUrl ? (
+              <>
+                <div className="row" style={{ gap: 'var(--space-2)' }}>
+                  <span className="badge" data-tone="warn">Not set up</span>
+                  <span className="panel-note" style={{ margin: 0 }}>
+                    This tab needs a proxy before it can do anything.
+                  </span>
+                </div>
+
+                <p className="issue-detail">
+                  A browser is not allowed to read another website's code. That is a security rule
+                  built into every browser, not something this tool can code around — so reading
+                  colours off a live URL needs a small server in between. There are three ways
+                  forward, and two of them need nothing at all:
+                </p>
+
+                <ol style={{ margin: 0, paddingLeft: 'var(--space-5)', display: 'grid', gap: 'var(--space-3)' }}>
+                  <li className="issue-detail" style={{ margin: 0 }}>
+                    <strong>Screenshot the site</strong> and drop it into the Image tab. Colours are
+                    clustered perceptually, so what comes back is what your eye picks out. Works
+                    right now, no setup.
+                  </li>
+                  <li className="issue-detail" style={{ margin: 0 }}>
+                    <strong>View source and paste it</strong> into the Paste Source tab. Catches
+                    every hex, rgb() and hsl() and ranks them by how often they appear — often more
+                    accurate than a screenshot, because it finds colours not currently on screen.
+                  </li>
+                  <li className="issue-detail" style={{ margin: 0 }}>
+                    <strong>Deploy the worker</strong> in the <span className="mono">worker/</span>{' '}
+                    folder of this project. Roughly five minutes: install wrangler, run{' '}
+                    <span className="mono">wrangler deploy</span>, paste the address it gives you
+                    into Settings. Then this tab works, and it follows stylesheets too.
+                  </li>
+                </ol>
+
+                <div className="row">
+                  <button className="btn" onClick={() => { setTab('image'); setCandidates([]); }}>
+                    Use a screenshot instead
+                  </button>
+                  <button className="btn" onClick={() => { setTab('css'); setCandidates([]); }}>
+                    Paste source instead
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="field">
+                  <label className="label" htmlFor="url">Website address</label>
+                  <input
+                    id="url"
+                    className="input"
+                    placeholder="https://example.com"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                  />
+                </div>
+                <div className="row" style={{ gap: 'var(--space-2)' }}>
+                  <span className="badge" data-tone="good">Proxy connected</span>
+                  <span className="panel-note mono" style={{ margin: 0, fontSize: 'var(--text-2xs)' }}>
+                    {settings.proxyUrl}
+                  </span>
+                </div>
+                <button
+                  className="btn btn-primary"
+                  disabled={busy || !urlInput.trim()}
+                  onClick={() => run(async () => {
+                    const found = await extractFromURL(urlInput, settings.proxyUrl);
+                    present(found.map((x) => x.hex), 'Ordered by how often each colour appears in the page and its stylesheets.');
+                  })}
+                >
+                  {busy ? 'Fetching…' : 'Fetch colours'}
+                </button>
+                <p className="panel-note">
+                  Reads the page and up to five of its stylesheets. Colours loaded by JavaScript
+                  after the page renders will not appear — for those, a screenshot is more reliable.
+                </p>
+              </>
+            )}
           </div>
         )}
 
