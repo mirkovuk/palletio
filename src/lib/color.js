@@ -133,6 +133,63 @@ export function oklchToHex({ L, C, h }) {
   return rgbToHex(oklabToRgbRaw(oklchToOklab({ L: Lc, C: lo, h })));
 }
 
+/**
+ * Is this OKLCH triplet reachable in sRGB? The picker uses this to draw the
+ * gamut boundary, which is the whole reason to build a picker rather than use
+ * the system one: sRGB's reachable region in OKLCH is a lopsided shape that
+ * differs per hue, and a picker that hides it lets you choose colours that
+ * silently clamp to something else.
+ *
+ * The tolerance here is much tighter than the one `oklchToHex` uses internally.
+ * That function needs slack so float error doesn't reject valid colours during
+ * its binary search. Boundary drawing needs the opposite: with loose slack,
+ * chroma up to roughly 0.11 counts as "reachable" at L=0 even though every one
+ * of those values renders as identical black — which would paint a band of
+ * phantom colour space along the bottom of the plane that you could drag into
+ * and get nothing.
+ */
+export function isInGamut({ L, C, h }) {
+  return inGamut(oklabToRgbRaw(oklchToOklab({ L, C, h })), 0.02);
+}
+
+/**
+ * Highest chroma sRGB can reach at this lightness and hue.
+ *
+ * "Reachable" has to mean *distinguishable*, not merely representable. Near
+ * black and near white, a range of chroma values are all numerically valid and
+ * all quantise to the same 8-bit colour — at L=0 every chroma below about 0.04
+ * renders as #000000. Reporting that as available chroma would let the cursor
+ * travel into a region where dragging does nothing, and would put a phantom
+ * reading in the chroma field. So the boundary is where the output stops
+ * changing, which is the boundary a person can actually see.
+ */
+export function maxChroma(L, h) {
+  const achromatic = oklchToHex({ L, C: 0, h });
+  const usable = (C) => isInGamut({ L, C, h }) && oklchToHex({ L, C, h }) !== achromatic;
+
+  if (!usable(0.45) && !usable(0.02)) {
+    // Nothing at this lightness separates from grey — black and white points.
+    let probe = 0.005;
+    while (probe < 0.45) {
+      if (usable(probe)) break;
+      probe *= 1.6;
+    }
+    if (probe >= 0.45) return 0;
+  }
+
+  let lo = 0;
+  let hi = 0.45;
+  for (let i = 0; i < 20; i++) {
+    const mid = (lo + hi) / 2;
+    if (isInGamut({ L, C: mid, h })) lo = mid;
+    else hi = mid;
+  }
+  return oklchToHex({ L, C: lo, h }) === achromatic ? 0 : lo;
+}
+
+/** Widest chroma any hue reaches in sRGB — the picker's x-axis ceiling. */
+export const CHROMA_CEILING = 0.37;
+
 /** Perceptual distance. Below ~0.02 two colours are hard to tell apart. */
 export function deltaEOK(hexA, hexB) {
   const a = hexToOklab(hexA);

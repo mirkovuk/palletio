@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { normalizeHex, hexToOklch, formatOklch } from '../lib/color.js';
 import { ROLES } from '../lib/roles.js';
 import {
@@ -6,14 +6,14 @@ import {
   IconDropper, IconUpload, IconWarning,
 } from './Icons.jsx';
 import ImportModal from './ImportModal.jsx';
+import ColorPicker, { PickerPopover } from './ColorPicker.jsx';
 
 function Swatch({
   hex, role, locked, flagged, index,
-  onChange, onRemove, onToggleLock, onCopy, onRoleChange,
+  onChange, onRemove, onToggleLock, onCopy, onRoleChange, onOpenPicker,
   onDragStart, onDragOver, onDrop, dragging,
 }) {
   const [draft, setDraft] = useState(hex);
-  const inputRef = useRef(null);
   const lch = hexToOklch(hex);
 
   const commit = () => {
@@ -35,8 +35,8 @@ function Swatch({
           type="button"
           className="swatch-fill"
           style={{ background: hex }}
-          onClick={() => inputRef.current?.click()}
-          aria-label={`Change ${hex}`}
+          onClick={(e) => onOpenPicker(index, e.currentTarget.getBoundingClientRect())}
+          aria-label={`Edit ${hex}`}
         />
         {flagged && <span className="swatch-flag">Flagged</span>}
         <button
@@ -49,15 +49,6 @@ function Swatch({
           <IconGrip />
         </button>
       </div>
-
-      <input
-        ref={inputRef}
-        type="color"
-        value={hex}
-        onChange={(e) => onChange(normalizeHex(e.target.value))}
-        className="visually-hidden"
-        tabIndex={-1}
-      />
 
       <div className="swatch-body">
         <input
@@ -110,8 +101,25 @@ export default function BuildStep({
 }) {
   const [importOpen, setImportOpen] = useState(false);
   const [dragIndex, setDragIndex] = useState(null);
-  const [hoverIndex, setHoverIndex] = useState(null);
-  const pickerRef = useRef(null);
+  const [, setHoverIndex] = useState(null);
+
+  /* One picker at a time. An `index` of null means "adding a new colour"
+     rather than editing an existing one. */
+  const [picker, setPicker] = useState(null);
+
+  /* A new swatch opens on the last colour in the palette rather than on a
+     default grey — you are usually adding a relative, not a stranger. */
+  const openPicker = (index, rect) => setPicker({
+    index,
+    rect,
+    seed: index === null ? (colors[colors.length - 1] || '#6E7FA8') : colors[index],
+  });
+
+  const commitPicker = (hex) => {
+    if (!picker) return;
+    if (picker.index === null) onAdd([hex]);
+    else onChange(picker.index, hex);
+  };
 
   const hasEyedropper = typeof window !== 'undefined' && 'EyeDropper' in window;
 
@@ -168,16 +176,13 @@ export default function BuildStep({
               <button className="btn btn-primary" onClick={() => setImportOpen(true)}>
                 <IconUpload /> Import colours
               </button>
-              <button className="btn" onClick={() => pickerRef.current?.click()}>
+              <button
+                className="btn"
+                onClick={(e) => openPicker(null, e.currentTarget.getBoundingClientRect())}
+              >
                 <IconPlus /> Pick a colour
               </button>
             </div>
-            <input
-              ref={pickerRef}
-              type="color"
-              className="visually-hidden"
-              onChange={(e) => onAdd([normalizeHex(e.target.value)])}
-            />
           </div>
         ) : (
           <div className="swatch-grid">
@@ -195,29 +200,27 @@ export default function BuildStep({
                 onToggleLock={() => onToggleLock(hex)}
                 onRoleChange={(role) => onRoleChange(hex, role)}
                 onCopy={onCopy}
+                onOpenPicker={openPicker}
                 onDragStart={setDragIndex}
                 onDragOver={setHoverIndex}
                 onDrop={handleDrop}
               />
             ))}
 
-            <button className="swatch-add" onClick={() => pickerRef.current?.click()}>
+            <button
+              className="swatch-add"
+              onClick={(e) => openPicker(null, e.currentTarget.getBoundingClientRect())}
+            >
               <IconPlus />
               <span className="swatch-add-title">Add a colour</span>
-              <span className="swatch-add-note">Opens your system colour picker</span>
+              <span className="swatch-add-note">Opens the OKLCH picker</span>
             </button>
-            <input
-              ref={pickerRef}
-              type="color"
-              className="visually-hidden"
-              onChange={(e) => onAdd([normalizeHex(e.target.value)])}
-            />
           </div>
         )}
 
         {colors.length > 0 && (
           <p className="panel-note" style={{ marginTop: 'var(--space-4)' }}>
-            Click a swatch to open the colour picker, type over the hex to set it exactly, or drag the
+            Click a swatch to open the picker, type over the hex to set it exactly, or drag the
             handle to reorder. Locking a colour protects it when you apply fixes in the next step.
           </p>
         )}
@@ -235,6 +238,18 @@ export default function BuildStep({
             generate from a smaller set.
           </p>
         </div>
+      )}
+
+      {picker && (
+        <PickerPopover anchorRect={picker.rect}>
+          <ColorPicker
+            value={picker.seed}
+            palette={colors}
+            title={picker.index === null ? 'Add a colour' : 'Edit colour'}
+            onCommit={commitPicker}
+            onClose={() => setPicker(null)}
+          />
+        </PickerPopover>
       )}
 
       {importOpen && (

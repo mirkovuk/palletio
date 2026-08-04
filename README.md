@@ -76,6 +76,22 @@ buttons are safe; the canvas isn't.
 
 ---
 
+## The colour picker
+
+Custom, not the OS one, and it works in OKLCH rather than HSL. Two reasons that
+matter in use:
+
+- Dragging lightness in HSL changes *perceived* lightness by different amounts
+  depending on hue, so you can't build a tonal ramp by eye. In OKLCH you can.
+- sRGB's reachable region is a lopsided shape that changes per hue. The picker
+  draws that boundary — the chequerboard is where sRGB can't go. A picker that
+  hides it lets you choose a colour that silently clamps to something else.
+
+The 2D plane is lightness (vertical) against chroma (horizontal) at a fixed
+hue; the strip below is hue, drawn at the current lightness and chroma so it
+shows what each hue would actually give you rather than a generic rainbow.
+Arrow keys nudge, shift-arrow moves in bigger steps.
+
 ## The logo test
 
 Lives at the bottom of step 5. Three things a pairing table can't tell you:
