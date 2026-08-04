@@ -1,0 +1,211 @@
+/**
+ * tokens.css — THE RESKIN SURFACE.
+ *
+ * When the Figma design is ready, this file is what changes. Nothing in
+ * components/ hardcodes a colour, radius, space or type value; everything
+ * reads from here. Replace the values below and the whole application follows.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * The one design decision worth defending before you overwrite it:
+ *
+ * The interface is achromatic on purpose. Every hue on screen belongs to the
+ * palette being evaluated — the chrome contributes none of its own. This is
+ * not minimalism as a style preference, it is a measurement requirement:
+ * simultaneous contrast means a saturated blue button beside a swatch shifts
+ * how that swatch is perceived, and a tool for judging colour cannot afford
+ * to lie about the thing it is judging. Even the focus state is a neutral.
+ *
+ * If the Figma introduces brand colour into the chrome, keep it out of the
+ * areas immediately adjacent to swatches and previews — the rail, the header
+ * and the buttons are safe; the canvas is not.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Structure: primitives first (raw values, no meaning), semantic second
+ * (meaning, referencing primitives). Components only ever use semantic tokens.
+ */
+
+:root {
+  /* ── Primitives: neutral ramp ─────────────────────────────────────────
+     A true neutral ramp with a very slight warm bias below 50% — pure grey
+     next to warm palettes reads as blue-green, and most brand work is warm. */
+  --n-0:   #ffffff;
+  --n-25:  #fcfcfb;
+  --n-50:  #f7f7f6;
+  --n-100: #f0f0ee;
+  --n-150: #e6e6e3;
+  --n-200: #d9d9d5;
+  --n-300: #c2c2bd;
+  --n-400: #a1a19b;
+  --n-500: #82827c;
+  --n-600: #64645f;
+  --n-700: #4a4a46;
+  --n-800: #333331;
+  --n-900: #212120;
+  --n-950: #141413;
+
+  /* ── Primitives: status ───────────────────────────────────────────────
+     Used only for judgement (pass/fail/warn), never for decoration.
+     Kept desaturated so they don't compete with the palette on screen. */
+  --s-good:      #2f7d5c;
+  --s-good-bg:   #eaf4ef;
+  --s-warn:      #8a6a1f;
+  --s-warn-bg:   #f7f1e2;
+  --s-bad:       #9c3a35;
+  --s-bad-bg:    #f8ecea;
+  --s-info:      #3f5d78;
+  --s-info-bg:   #eef2f6;
+
+  /* ── Primitives: type ─────────────────────────────────────────────────
+     Satoshi and DM Mono because that is the stack already in use elsewhere;
+     both load from CDN in index.html with system fallbacks. */
+  --font-ui: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --text-2xs: 0.6875rem;  /* 11px — eyebrows, counts */
+  --text-xs:  0.75rem;    /* 12px — captions, notes */
+  --text-sm:  0.8125rem;  /* 13px — secondary body, controls */
+  --text-md:  0.9375rem;  /* 15px — body */
+  --text-lg:  1.125rem;   /* 18px — section titles */
+  --text-xl:  1.5rem;     /* 24px — step titles */
+  --text-2xl: 2rem;       /* 32px — display */
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-bold: 700;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.06em;
+  --tracking-caps: 0.09em;
+
+  /* ── Primitives: space (4px base) ─────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ── Primitives: shape ────────────────────────────────────────────── */
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+
+  --border-width: 1px;
+
+  --shadow-sm: 0 1px 2px rgba(20, 20, 19, 0.05);
+  --shadow-md: 0 2px 8px rgba(20, 20, 19, 0.07), 0 1px 2px rgba(20, 20, 19, 0.05);
+  --shadow-lg: 0 8px 28px rgba(20, 20, 19, 0.10), 0 2px 6px rgba(20, 20, 19, 0.05);
+
+  /* ── Primitives: motion ───────────────────────────────────────────── */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duration-fast: 110ms;
+  --duration-base: 180ms;
+
+  /* ── Layout constants ─────────────────────────────────────────────── */
+  --rail-width: 208px;
+  --insights-width: 320px;
+  --header-height: 60px;
+  --canvas-max: 1080px;
+
+  /* ══ SEMANTIC ═══════════════════════════════════════════════════════
+     Components use only these. Renaming a primitive is safe; renaming a
+     semantic token means touching components. */
+
+  --bg-app: var(--n-50);
+  --bg-canvas: var(--n-25);
+  --bg-surface: var(--n-0);
+  --bg-surface-raised: var(--n-0);
+  --bg-subtle: var(--n-100);
+  --bg-inset: var(--n-100);
+  --bg-hover: var(--n-100);
+  --bg-active: var(--n-150);
+  --bg-selected: var(--n-900);
+  --bg-overlay: rgba(20, 20, 19, 0.42);
+
+  --fg-primary: var(--n-900);
+  --fg-secondary: var(--n-600);
+  --fg-muted: var(--n-500);
+  --fg-faint: var(--n-400);
+  --fg-inverse: var(--n-0);
+  --fg-on-selected: var(--n-0);
+
+  --border-subtle: var(--n-150);
+  --border-default: var(--n-200);
+  --border-strong: var(--n-300);
+  --border-focus: var(--n-900);
+
+  --control-bg: var(--n-0);
+  --control-bg-hover: var(--n-50);
+  --control-border: var(--n-200);
+  --control-fg: var(--n-800);
+
+  --button-primary-bg: var(--n-900);
+  --button-primary-fg: var(--n-0);
+  --button-primary-bg-hover: var(--n-800);
+
+  --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--n-800);
+}
+
+/* ── Dark theme ───────────────────────────────────────────────────────
+   Swatch judgement changes with surround lightness, which is exactly why the
+   toggle exists: a palette that only works on a light chrome is not finished.
+   Only semantic tokens are remapped — primitives stay put. */
+[data-theme='dark'] {
+  --bg-app: var(--n-950);
+  --bg-canvas: #1a1a19;
+  --bg-surface: var(--n-900);
+  --bg-surface-raised: var(--n-800);
+  --bg-subtle: #262625;
+  --bg-inset: #1a1a19;
+  --bg-hover: #2c2c2a;
+  --bg-active: #3a3a37;
+  --bg-selected: var(--n-100);
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  --fg-primary: var(--n-50);
+  --fg-secondary: var(--n-300);
+  --fg-muted: var(--n-400);
+  --fg-faint: var(--n-500);
+  --fg-inverse: var(--n-950);
+  --fg-on-selected: var(--n-950);
+
+  --border-subtle: #2e2e2c;
+  --border-default: #3d3d3a;
+  --border-strong: #52524e;
+  --border-focus: var(--n-100);
+
+  --control-bg: #262625;
+  --control-bg-hover: #30302e;
+  --control-border: #3d3d3a;
+  --control-fg: var(--n-100);
+
+  --button-primary-bg: var(--n-100);
+  --button-primary-fg: var(--n-950);
+  --button-primary-bg-hover: var(--n-0);
+
+  --s-good-bg: #17281f;
+  --s-warn-bg: #2a2415;
+  --s-bad-bg: #2b1917;
+  --s-info-bg: #1a2129;
+  --s-good: #6dbd96;
+  --s-warn: #cfa544;
+  --s-bad: #d98079;
+  --s-info: #8fb0cc;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.45);
+
+  --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--n-100);
+}
