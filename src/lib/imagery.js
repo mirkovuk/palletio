@@ -150,22 +150,34 @@ export function duotoneLayers(shadowHex, highlightHex) {
   return { dark, light };
 }
 
-export function treatmentStyles(treatment, { shadow, highlight, hero }) {
-  if (treatment === 'original') return { filter: 'none', layers: [] };
+/**
+ * `strength` (0–1) is how far the treatment is taken. At 1 the image is fully
+ * remapped into the palette; below that, some of the original photograph
+ * survives underneath, which usually blends better with the layout than a
+ * hard duotone does.
+ *
+ * It is applied to both the desaturation and the tint layers together, so
+ * dialling it down doesn't leave a grey photo with a colour wash on top —
+ * it genuinely returns towards the original.
+ */
+export function treatmentStyles(treatment, { shadow, highlight, hero, strength = 1 }) {
+  const s = Math.max(0, Math.min(1, strength));
+
+  if (treatment === 'original' || s === 0) return { filter: 'none', layers: [] };
 
   if (treatment === 'tinted') {
     return {
-      filter: 'saturate(0.55) contrast(1.03)',
-      layers: [{ background: hero, mixBlendMode: 'color', opacity: 0.72 }],
+      filter: `saturate(${1 - 0.45 * s}) contrast(${1 + 0.03 * s})`,
+      layers: [{ background: hero, mixBlendMode: 'color', opacity: 0.72 * s }],
     };
   }
 
   const { dark, light } = duotoneLayers(shadow, highlight);
   return {
-    filter: 'grayscale(1) contrast(1.08)',
+    filter: `grayscale(${s}) contrast(${1 + 0.08 * s})`,
     layers: [
-      { background: dark, mixBlendMode: 'lighten', opacity: 1 },
-      { background: light, mixBlendMode: 'multiply', opacity: 1 },
+      { background: dark, mixBlendMode: 'lighten', opacity: s },
+      { background: light, mixBlendMode: 'multiply', opacity: s },
     ],
   };
 }

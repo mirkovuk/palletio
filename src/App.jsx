@@ -41,6 +41,32 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [addedCounts, setAddedCounts] = useState({});
 
+  /* Step components unmount when you navigate away, so anything expensive to
+     re-create — an uploaded logo, a chosen photograph — has to live here or
+     it is lost every time you go back to change a colour. That was the whole
+     point of the tool: change a colour, look at the logo again. */
+  const [logoState, setLogoState] = useState({
+    markId: 'arc',
+    upload: null,
+    mapping: {},
+    fg: null,
+    secondary: null,
+    bg: null,
+    largeSize: 240,
+    grouped: true,
+  });
+
+  const [imageState, setImageState] = useState({
+    on: false,
+    images: [],
+    selected: null,
+    treatment: 'duotone',
+    strength: 1,
+    source: null,
+    shadow: null,
+    highlight: null,
+  });
+
   /* Roles are derived, not stored, so a colour change can never leave an
      orphaned role behind. Manual choices are layered on top. */
   const roles = useMemo(() => inferRoles(colors, manualRoles), [colors, manualRoles]);
@@ -298,6 +324,10 @@ export default function App() {
                 onToast={showToast}
                 onSave={savePresent}
                 settings={settings}
+                logoState={logoState}
+                onLogoState={setLogoState}
+                imageState={imageState}
+                onImageState={setImageState}
               />
             )}
           </div>

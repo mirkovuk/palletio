@@ -3,6 +3,7 @@ import Previews from './Previews.jsx';
 import LogoTest from './LogoTest.jsx';
 import { VIBES } from '../lib/vibes.js';
 import { findImages, TREATMENTS, VIBE_QUERIES } from '../lib/imagery.js';
+import { surfaceMap } from '../lib/vibes.js';
 import { CVD_TYPES } from '../lib/color.js';
 import { buildPairings } from '../lib/roles.js';
 import {
@@ -20,21 +21,26 @@ const CODE_TABS = [
 
 export default function ExportStep({
   colors, roles, name, vibeId, onVibeChange, cvd, onCvdChange, onToast, onSave, settings,
+  logoState, onLogoState, imageState, onImageState,
 }) {
   const [codeTab, setCodeTab] = useState('css');
-
-  /* Imagery is off until asked for. A photograph brings its own colours into
-     a preview whose entire purpose is judging yours, so it should never
-     appear by default. */
-  const [imageOn, setImageOn] = useState(false);
-  const [images, setImages] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [treatment, setTreatment] = useState('duotone');
   const [imageBusy, setImageBusy] = useState(false);
   const [imageError, setImageError] = useState('');
-  const [source, setSource] = useState(null);
 
+  /* Imagery state is held by the parent so a chosen photograph survives
+     navigating away and back. Only the transient bits — loading, errors —
+     are local. */
+  const setImage = (next) => onImageState((prev) => ({ ...prev, ...next }));
+  const { on: imageOn, images, selected, treatment, strength, source } = imageState;
+
+  const map = surfaceMap(colors, roles);
   const hero = colors.find((hex) => roles[hex] === 'hero') || colors[0];
+
+  /* Duotone endpoints default to the palette's text and page colours — the
+     darkest and lightest things you actually chose — and can be overridden. */
+  const shadow = colors.includes(imageState.shadow) ? imageState.shadow : map.ink;
+  const highlight = colors.includes(imageState.highlight) ? imageState.highlight : map.page;
+  const previewMap = { ...map, duotoneShadow: shadow, duotoneHighlight: highlight };
 
   const loadImages = async () => {
     setImageBusy(true);
@@ -45,10 +51,12 @@ export default function ExportStep({
         hero,
         settings,
       });
-      setImages(result.images);
-      setSource(result.source);
-      setSelected(result.images[0] || null);
-      setImageOn(true);
+      setImage({
+        images: result.images,
+        source: result.source,
+        selected: result.images[0] || null,
+        on: true,
+      });
     } catch (e) {
       setImageError(e.message || 'Could not load imagery.');
     } finally {
@@ -144,7 +152,7 @@ export default function ExportStep({
               </button>
             ) : (
               <>
-                <button className="btn btn-sm" onClick={() => setImageOn(false)}>
+                <button className="btn btn-sm" onClick={() => setImage({ on: false })}>
                   <IconX /> Remove imagery
                 </button>
                 <button className="btn btn-sm" onClick={loadImages} disabled={imageBusy}>
@@ -156,7 +164,7 @@ export default function ExportStep({
                       key={t.id}
                       className="filter-btn"
                       aria-pressed={treatment === t.id}
-                      onClick={() => setTreatment(t.id)}
+                      onClick={() => setImage({ treatment: t.id })}
                       title={t.note}
                     >
                       {t.label}
@@ -177,14 +185,73 @@ export default function ExportStep({
                     key={img.id}
                     className="image-thumb"
                     aria-pressed={selected?.id === img.id}
-                    onClick={() => setSelected(img)}
+                    onClick={() => setImage({ selected: img })}
                   >
                     <img src={img.thumb} alt="" loading="lazy" />
                   </button>
                 ))}
               </div>
+              <div className="row" style={{ gap: 'var(--space-6)', alignItems: 'flex-start' }}>
+                <div className="logo-size-control" style={{ minWidth: 200, flex: 1 }}>
+                  <div className="picker-row-label">
+                    <span className="label">Blend</span>
+                    <span className="picker-value mono">{Math.round(strength * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    className="logo-size-slider"
+                    min="0" max="100" step="5"
+                    value={Math.round(strength * 100)}
+                    onChange={(e) => setImage({ strength: +e.target.value / 100 })}
+                    aria-label="Treatment strength"
+                  />
+                  <p className="panel-note" style={{ margin: 0 }}>
+                    How far the treatment goes. Below 100% some of the original photograph survives,
+                    which usually sits more naturally in a layout than a hard duotone.
+                  </p>
+                </div>
+
+                {treatment === 'duotone' && (
+                  <>
+                    <div className="field">
+                      <span className="label">Shadows</span>
+                      <div className="chip-row">
+                        {colors.map((hex) => (
+                          <button
+                            key={hex} className="chip-pick" title={hex}
+                            onClick={() => setImage({ shadow: hex })}
+                            style={shadow === hex
+                              ? { borderColor: 'var(--border-focus)', borderWidth: 2 }
+                              : { opacity: 0.55 }}
+                          >
+                            <span className="chip-pick-dot" style={{ background: hex }} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="field">
+                      <span className="label">Highlights</span>
+                      <div className="chip-row">
+                        {colors.map((hex) => (
+                          <button
+                            key={hex} className="chip-pick" title={hex}
+                            onClick={() => setImage({ highlight: hex })}
+                            style={highlight === hex
+                              ? { borderColor: 'var(--border-focus)', borderWidth: 2 }
+                              : { opacity: 0.55 }}
+                          >
+                            <span className="chip-pick-dot" style={{ background: hex }} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <p className="panel-note">
                 {TREATMENTS.find((t) => t.id === treatment)?.note}
+                {treatment === 'duotone' && ` · Currently mapping shadows to ${shadow} and highlights to ${highlight}.`}
                 {source === 'picsum' && ' · Using Lorem Picsum, which needs no key but ignores the subject. Add an Unsplash access key in Settings for images matched to your palette and vibe.'}
                 {source === 'unsplash' && ' · Photographs from Unsplash, filtered towards your hero colour.'}
               </p>
@@ -201,6 +268,8 @@ export default function ExportStep({
           onCvdChange={onCvdChange}
           image={imageOn ? selected : null}
           treatment={treatment}
+          imageStrength={strength}
+          overrideMap={previewMap}
         />
       </div>
 
@@ -211,7 +280,13 @@ export default function ExportStep({
             Upload a real mark, or use one of the built-ins to feel out the palette
           </p>
         </div>
-        <LogoTest colors={colors} roles={roles} cvd={cvd} />
+        <LogoTest
+          colors={colors}
+          roles={roles}
+          cvd={cvd}
+          state={logoState}
+          onState={onLogoState}
+        />
       </div>
 
       <div className="panel">

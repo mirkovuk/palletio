@@ -69,25 +69,35 @@ function tierFor(ratio) {
 
 /* ------------------------------------------------------------ component */
 
-export default function LogoTest({ colors, roles, cvd }) {
-  const [markId, setMarkId] = useState('arc');
-  const [upload, setUpload] = useState(null);
-  const [mapping, setMapping] = useState({});
+export default function LogoTest({ colors, roles, cvd, state, onState }) {
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
 
   const map = surfaceMap(colors, roles);
-  const [fg, setFg] = useState(map.hero);
-  const [bg, setBg] = useState(map.page);
-  const [secondary, setSecondary] = useState(map.ink);
 
-  // If the palette changes underneath a selection, fall back rather than
-  // rendering a colour that is no longer in the palette.
-  useEffect(() => {
-    if (!colors.includes(fg)) setFg(map.hero);
-    if (!colors.includes(bg)) setBg(map.page);
-    if (!colors.includes(secondary)) setSecondary(map.ink);
-  }, [colors]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* All of this lives in the parent so it survives navigating between steps.
+     An uploaded logo that vanishes when you go back to tweak a colour makes
+     the whole test useless. */
+  const patch = (next) => onState((prev) => ({ ...prev, ...next }));
+
+  const markId = state.markId;
+  const upload = state.upload;
+  const mapping = state.mapping;
+  const grouped = state.grouped;
+
+  /* Colour choices fall back to sensible roles when unset, or when the
+     palette changes underneath them. */
+  const fg = colors.includes(state.fg) ? state.fg : map.hero;
+  const bg = colors.includes(state.bg) ? state.bg : map.page;
+  const secondary = colors.includes(state.secondary) ? state.secondary : map.ink;
+
+  const setMarkId = (markId) => patch({ markId, upload: null });
+  const setUpload = (upload) => patch({ upload });
+  const setMapping = (mapping) => patch({ mapping });
+  const setGrouped = (grouped) => patch({ grouped });
+  const setFg = (fg) => patch({ fg });
+  const setBg = (bg) => patch({ bg });
+  const setSecondary = (secondary) => patch({ secondary });
 
   const mark = getMark(markId);
   const c = (hex) => simulateCVD(hex, cvd);
@@ -96,7 +106,8 @@ export default function LogoTest({ colors, roles, cvd }) {
      number, so it fills the space available without ever overflowing it. */
   const stageRef = useRef(null);
   const [largeMax, setLargeMax] = useState(360);
-  const [largeSize, setLargeSize] = useState(240);
+  const largeSize = state.largeSize;
+  const setLargeSize = (largeSize) => patch({ largeSize });
 
   useEffect(() => {
     const el = stageRef.current;
@@ -107,11 +118,11 @@ export default function LogoTest({ colors, roles, cvd }) {
       );
       const ceiling = Math.max(LARGE_MIN, available);
       setLargeMax(ceiling);
-      setLargeSize((current) => Math.min(current, ceiling));
+      onState((prev) => (prev.largeSize > ceiling ? { ...prev, largeSize: ceiling } : prev));
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [onState]);
 
   const renderMark = (size, aColor, bColor, flatten = null) =>
     upload ? (
@@ -140,14 +151,13 @@ export default function LogoTest({ colors, roles, cvd }) {
       const text = await file.text();
       const svg = sanitizeSVG(text);
       const fills = findFills(svg);
-      setUpload({ name: file.name, svg, viewBox: readViewBox(svg), fills });
       // Seed the mapping so it renders in palette colours immediately rather
       // than in whatever the file happened to contain.
       const seed = {};
       fills.forEach((hex, i) => {
         seed[hex] = i === 0 ? fg : i === 1 ? secondary : colors[i % colors.length];
       });
-      setMapping(seed);
+      patch({ upload: { name: file.name, svg, viewBox: readViewBox(svg), fills }, mapping: seed });
     } catch (e) {
       setError(e.message || 'Could not read that file.');
     }
@@ -155,8 +165,6 @@ export default function LogoTest({ colors, roles, cvd }) {
 
   const pairRatio = contrastRatio(fg, bg);
   const guidance = markGuidance(pairRatio);
-
-  const [grouped, setGrouped] = useState(true);
 
   /* Computed once so switching grouping never recalculates contrast. */
   const combos = useMemo(() => {
@@ -246,7 +254,7 @@ export default function LogoTest({ colors, roles, cvd }) {
                 key={m.id}
                 className="vibe-btn"
                 aria-pressed={!upload && markId === m.id}
-                onClick={() => { setMarkId(m.id); setUpload(null); }}
+                onClick={() => setMarkId(m.id)}
               >
                 <span className="vibe-btn-label">{m.label}</span>
                 <span className="vibe-btn-note">{m.note}</span>
@@ -272,7 +280,7 @@ export default function LogoTest({ colors, roles, cvd }) {
         </label>
 
         {upload && (
-          <button className="btn btn-ghost btn-sm" onClick={() => { setUpload(null); setMapping({}); }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => patch({ upload: null, mapping: {} })}>
             <IconX /> {upload.name}
           </button>
         )}

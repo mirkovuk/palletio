@@ -8,6 +8,16 @@
  * colours against different amounts of weight, contrast and white space.
  */
 
+/**
+ * `radius` is for small controls — buttons, tags, chips. `radiusCard` is for
+ * anything large: cards, inputs, image frames, panels.
+ *
+ * They are separate because a radius that reads as a confident pill on a
+ * 32px-tall button becomes a lozenge on a 300px card. Expressive uses 999px
+ * on buttons and 18px on cards for exactly this reason — the shape language
+ * is "fully rounded", but applied literally at large sizes it just looks
+ * broken.
+ */
 export const VIBES = [
   {
     id: 'modernist',
@@ -21,6 +31,7 @@ export const VIBES = [
     displayCase: 'none',
     bodyWeight: 400,
     radius: '4px',
+    radiusCard: '6px',
     shape: 'grid',
     density: 'tight',
     heroScale: 1,
@@ -37,6 +48,7 @@ export const VIBES = [
     displayCase: 'none',
     bodyWeight: 400,
     radius: '2px',
+    radiusCard: '2px',
     shape: 'rule',
     density: 'airy',
     heroScale: 1.15,
@@ -53,6 +65,7 @@ export const VIBES = [
     displayCase: 'none',
     bodyWeight: 400,
     radius: '24px',
+    radiusCard: '20px',
     shape: 'blob',
     density: 'airy',
     heroScale: 0.95,
@@ -69,6 +82,7 @@ export const VIBES = [
     displayCase: 'none',
     bodyWeight: 400,
     radius: '0px',
+    radiusCard: '0px',
     shape: 'hairline',
     density: 'tight',
     heroScale: 0.9,
@@ -85,6 +99,7 @@ export const VIBES = [
     displayCase: 'none',
     bodyWeight: 500,
     radius: '999px',
+    radiusCard: '18px',
     shape: 'arc',
     density: 'tight',
     heroScale: 1.3,

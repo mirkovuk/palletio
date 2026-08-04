@@ -45,12 +45,13 @@ function Scaled({ width, height, children }) {
  * avoids a CORS round trip on every image and keeps it live as the palette
  * changes.
  */
-function TreatedImage({ image, treatment, map, style }) {
+function TreatedImage({ image, treatment, map, style, strength = 1 }) {
   if (!image) return null;
   const { filter, layers } = treatmentStyles(treatment, {
-    shadow: map.ink,
-    highlight: map.page,
+    shadow: map.duotoneShadow || map.ink,
+    highlight: map.duotoneHighlight || map.page,
     hero: map.hero,
+    strength,
   });
 
   return (
@@ -131,7 +132,7 @@ function Ornament({ vibe, map, cv }) {
   );
 }
 
-function HeroPreview({ map, vibe, cv, image, treatment }) {
+function HeroPreview({ map, vibe, cv, image, treatment, imageStrength }) {
   const c = (hex) => simulateCVD(hex, cv);
   const heroText = bestTextOn(map.hero, [map.page, map.ink, '#FFFFFF', '#000000']);
   const airy = vibe.density === 'airy';
@@ -154,7 +155,15 @@ function HeroPreview({ map, vibe, cv, image, treatment }) {
           image={image}
           treatment={treatment}
           map={map}
-          style={{ left: '52%', right: 0, top: 0, bottom: 0, inset: 'auto' }}
+          strength={imageStrength}
+          /* Right-hand half only, fading out towards the text column. An
+             image behind the headline makes the headline unreadable no
+             matter how good the contrast score says it is. */
+          style={{
+            inset: '0 0 0 46%',
+            maskImage: 'linear-gradient(90deg, transparent 0%, #000 22%)',
+            WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, #000 22%)',
+          }}
         />
       ) : (
         <Ornament vibe={vibe} map={map} cv={cv} />
@@ -191,7 +200,14 @@ function HeroPreview({ map, vibe, cv, image, treatment }) {
         </span>
       </nav>
 
-      <div style={{ padding: `${airy ? 64 : 40}px ${airy ? 72 : 56}px`, maxWidth: 620, position: 'relative', zIndex: 2 }}>
+      <div
+        style={{
+          padding: `${airy ? 40 : 28}px ${airy ? 72 : 56}px 0`,
+          maxWidth: 560,
+          position: 'relative',
+          zIndex: 2,
+        }}
+      >
         <div
           style={{
             display: 'inline-block',
@@ -213,7 +229,7 @@ function HeroPreview({ map, vibe, cv, image, treatment }) {
           style={{
             fontFamily: vibe.display,
             fontWeight: vibe.displayWeight,
-            fontSize: 64 * vibe.heroScale,
+            fontSize: 56 * vibe.heroScale,
             lineHeight: 1.02,
             letterSpacing: vibe.displayTracking,
             margin: '0 0 24px',
@@ -224,7 +240,7 @@ function HeroPreview({ map, vibe, cv, image, treatment }) {
           <span style={{ color: c(map.hero) }}>contact with reality</span>
         </h1>
 
-        <p style={{ fontSize: 18, lineHeight: 1.55, opacity: 0.78, margin: '0 0 36px', maxWidth: 460 }}>
+        <p style={{ fontSize: 17, lineHeight: 1.5, opacity: 0.78, margin: '0 0 28px', maxWidth: 440 }}>
           A palette looks fine in isolation and falls apart the moment it has to carry a button, a
           caption and a body of text. This is what yours does under load.
         </p>
@@ -283,7 +299,7 @@ function HeroPreview({ map, vibe, cv, image, treatment }) {
   );
 }
 
-function SocialPreview({ map, vibe, cv, image, treatment }) {
+function SocialPreview({ map, vibe, cv, image, treatment, imageStrength }) {
   const c = (hex) => simulateCVD(hex, cv);
   const onHero = bestTextOn(map.hero, [map.page, map.ink, '#FFFFFF', '#000000']);
 
@@ -302,7 +318,19 @@ function SocialPreview({ map, vibe, cv, image, treatment }) {
       }}
     >
       {image ? (
-        <TreatedImage image={image} treatment={treatment} map={map} style={{ opacity: 0.85 }} />
+        <>
+          <TreatedImage image={image} treatment={treatment} map={map} strength={imageStrength} />
+          {/* Type over a photograph needs a scrim regardless of contrast
+              score — the score assumes a flat ground, and a photo is not one. */}
+          <span
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: `linear-gradient(0deg, ${c(map.hero)} 4%, transparent 62%)`,
+              opacity: 0.92,
+            }}
+          />
+        </>
       ) : (
         <div
           style={{
@@ -431,10 +459,10 @@ function UIKitPreview({ map, vibe, cv }) {
 
       <div style={{ display: 'grid', gap: 8 }}>
         <span style={{ fontSize: 12, opacity: 0.7 }}>Email address</span>
-        <div style={{ padding: '11px 14px', borderRadius: vibe.radius, border: `1.5px solid ${c(border)}`, background: c(map.surface), fontSize: 14, opacity: 0.55 }}>
+        <div style={{ padding: '11px 14px', borderRadius: vibe.radiusCard, border: `1.5px solid ${c(border)}`, background: c(map.surface), fontSize: 14, opacity: 0.55 }}>
           you@studio.com
         </div>
-        <div style={{ padding: '11px 14px', borderRadius: vibe.radius, border: `2px solid ${c(map.hero)}`, background: c(map.surface), fontSize: 14 }}>
+        <div style={{ padding: '11px 14px', borderRadius: vibe.radiusCard, border: `2px solid ${c(map.hero)}`, background: c(map.surface), fontSize: 14 }}>
           mirko@studio.com
         </div>
       </div>
@@ -457,7 +485,7 @@ function UIKitPreview({ map, vibe, cv }) {
         ))}
       </div>
 
-      <div style={{ padding: 20, borderRadius: vibe.radius, background: c(map.surface), border: `1px solid ${c(border)}`, display: 'grid', gap: 8 }}>
+      <div style={{ padding: 20, borderRadius: vibe.radiusCard, background: c(map.surface), border: `1px solid ${c(border)}`, display: 'grid', gap: 8 }}>
         <span style={{ fontFamily: vibe.display, fontWeight: vibe.displayWeight, fontSize: 20, letterSpacing: vibe.displayTracking }}>
           Card heading
         </span>
@@ -472,10 +500,11 @@ function UIKitPreview({ map, vibe, cv }) {
 }
 
 export default function Previews({
-  colors, roles, vibeId, onVibeChange, cvd, onCvdChange, image, treatment,
+  colors, roles, vibeId, onVibeChange, cvd, onCvdChange,
+  image, treatment, imageStrength = 1, overrideMap,
 }) {
   const vibe = getVibe(vibeId);
-  const map = surfaceMap(colors, roles);
+  const map = overrideMap || surfaceMap(colors, roles);
 
   if (colors.length < 3) {
     return (
@@ -501,7 +530,10 @@ export default function Previews({
         </div>
         <div className="preview-frame">
           <Scaled width={1200} height={680}>
-            <HeroPreview map={map} vibe={vibe} cv={cvd} image={image} treatment={treatment} />
+            <HeroPreview
+              map={map} vibe={vibe} cv={cvd}
+              image={image} treatment={treatment} imageStrength={imageStrength}
+            />
           </Scaled>
         </div>
       </div>
@@ -526,7 +558,10 @@ export default function Previews({
           </div>
           <div className="preview-frame">
             <Scaled width={432} height={540}>
-              <SocialPreview map={map} vibe={vibe} cv={cvd} image={image} treatment={treatment} />
+              <SocialPreview
+              map={map} vibe={vibe} cv={cvd}
+              image={image} treatment={treatment} imageStrength={imageStrength}
+            />
             </Scaled>
           </div>
         </div>
