@@ -76,6 +76,38 @@ buttons are safe; the canvas isn't.
 
 ---
 
+## Why the previews are fluid
+
+The sample layouts used to render at a fixed 1200px and shrink with a CSS
+transform. That kept overflowing its panel, and no amount of `min-width: 0`
+was going to fix it: `transform` changes how an element *looks*, not the box
+it occupies, so a 1200px child still contributes 1200px to its ancestors'
+intrinsic width. Any ancestor sized by its contents gets inflated — and then
+the measurement driving the scale reads that inflated width and never shrinks
+anything.
+
+Now the frame declares an aspect ratio and becomes a CSS container, and every
+dimension inside is in `cqw` (percent of container width). 56px type on a
+1200px grid is `4.6667cqw`. Nothing has a fixed width, so nothing can overflow,
+no measurement is needed, and the proportions are identical at any size.
+
+## Landing layouts
+
+**Split** — type left, image or ornament right. With imagery, the edge can fade
+or be a hard split; hard is the honest one, since a fade lays a wash of the page
+colour over the photograph.
+
+**Statement** — flat colour field, centred display type, a row of cards
+straddling the colour boundary. No photography at all. It is the harder test:
+nowhere for a weak colour to hide, and a card row is where a palette's mid-range
+gets found out. A photograph can rescue a palette that cannot do this.
+
+## Changing the favicon
+
+Replace `public/favicon.svg`. Nothing else needs editing — the link tags in
+`index.html` already point at it. SVG is one file, sharp at every size, and can
+respond to the OS colour scheme. Draw on a 32px grid and check it at 16px.
+
 ## The description
 
 Step 2 writes a short read of what the palette feels like, updating live as you

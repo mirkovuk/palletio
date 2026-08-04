@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Previews from './Previews.jsx';
+import Previews, { LANDING_LAYOUTS } from './Previews.jsx';
 import LogoTest from './LogoTest.jsx';
 import { VIBES } from '../lib/vibes.js';
 import { findImages, TREATMENTS, VIBE_QUERIES, duotoneCandidates, registerUse } from '../lib/imagery.js';
@@ -127,6 +127,23 @@ export default function ExportStep({
       <div className="panel">
         <div className="preview-controls">
           <div className="field">
+            <span className="label">Landing layout</span>
+            <div className="vibe-bar">
+              {LANDING_LAYOUTS.map((l) => (
+                <button
+                  key={l.id}
+                  className="vibe-btn"
+                  aria-pressed={(imageState.layout || 'split') === l.id}
+                  onClick={() => setImage({ layout: l.id })}
+                >
+                  <span className="vibe-btn-label">{l.label}</span>
+                  <span className="vibe-btn-note">{l.note}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="field">
             <span className="label">Direction</span>
             <div className="vibe-bar">
               {VIBES.map((v) => (
@@ -158,6 +175,13 @@ export default function ExportStep({
         </div>
 
         <div className="image-picker" style={{ marginBottom: 'var(--space-5)' }}>
+          {(imageState.layout || 'split') === 'statement' ? (
+            <p className="panel-note">
+              The Statement layout is type and colour only — no photography, by design. It is the
+              harder test: a flat field with a headline sitting directly on it, and a card row where
+              every card has to hold its own text. Nowhere for a weak colour to hide.
+            </p>
+          ) : (<>
           <div className="row">
             {!imageOn ? (
               <button className="btn btn-sm" onClick={loadImages} disabled={imageBusy}>
@@ -171,6 +195,24 @@ export default function ExportStep({
                 <button className="btn btn-sm" onClick={loadImages} disabled={imageBusy}>
                   <IconShuffle /> Different images
                 </button>
+                <div className="filter-bar">
+                  <button
+                    className="filter-btn"
+                    aria-pressed={!imageState.hardEdge}
+                    onClick={() => setImage({ hardEdge: false })}
+                    title="Image fades into the text column"
+                  >
+                    Faded edge
+                  </button>
+                  <button
+                    className="filter-btn"
+                    aria-pressed={!!imageState.hardEdge}
+                    onClick={() => setImage({ hardEdge: true })}
+                    title="Clean split, no wash over the photograph"
+                  >
+                    Hard edge
+                  </button>
+                </div>
                 <div className="filter-bar">
                   {TREATMENTS.map((t) => (
                     <button
@@ -288,6 +330,7 @@ export default function ExportStep({
               </p>
             </>
           )}
+          </>)}
         </div>
 
         <Previews
@@ -301,6 +344,8 @@ export default function ExportStep({
           treatment={treatment}
           imageStrength={strength}
           overrideMap={previewMap}
+          layout={imageState.layout || 'split'}
+          hardEdge={!!imageState.hardEdge}
         />
 
         {imageOn && selected && (

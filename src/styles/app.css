@@ -785,7 +785,12 @@ button { cursor: pointer; }
 
 .preview-stage { display: grid; gap: var(--space-6); }
 
+/* Previews are fluid: the frame sets an aspect ratio and becomes a container,
+   and everything inside is sized in cqw. Nothing has a fixed pixel width, so
+   nothing can overflow its panel — which is what kept happening when these
+   were drawn at 1200px and shrunk with a transform. */
 .preview-frame {
+  width: 100%;
   max-width: 100%;
   min-width: 0;
   border: var(--border-width) solid var(--border-subtle);

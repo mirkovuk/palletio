@@ -65,6 +65,9 @@ export default function App() {
     source: null,
     shadow: null,
     highlight: null,
+    useHighlight: true,
+    layout: 'split',
+    hardEdge: false,
   });
 
   /* Roles are derived, not stored, so a colour change can never leave an
