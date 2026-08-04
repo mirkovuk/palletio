@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   MARKS, getMark, TEST_SIZES, markGuidance,
   sanitizeSVG, readViewBox, innerSVG, findFills, recolorSVG,
@@ -41,6 +41,32 @@ function UploadedMark({ upload, mapping, flatten, size }) {
   );
 }
 
+/* The smallest the large preview goes is one step above the 96px ramp below
+   it, so the two never show the same thing twice. */
+const LARGE_MIN = 156;
+
+/**
+ * Suitability tiers for a mark on a ground.
+ *
+ * Not WCAG levels — WCAG exempts logotypes entirely. These are thresholds for
+ * whether the mark holds its shape, which is a different question from text
+ * legibility and has a lower floor.
+ */
+const TIERS = [
+  { id: 'best', mark: '★', label: 'Use these', range: '4.5:1 and above', min: 4.5,
+    note: 'Holds at every size, down to favicon. Safe as a default lockup.' },
+  { id: 'ok', mark: '✓', label: 'Usable with care', range: '3:1 to 4.5:1', min: 3,
+    note: 'Fine above roughly 32px. Avoid for anything small or fine-lined.' },
+  { id: 'weak', mark: '~', label: 'Large only', range: '2:1 to 3:1', min: 2,
+    note: 'Works as a big graphic element. Loses definition as soon as it shrinks.' },
+  { id: 'avoid', mark: '✕', label: 'Avoid', range: 'Below 2:1', min: 0,
+    note: 'Mark and ground are too close to separate reliably.' },
+];
+
+function tierFor(ratio) {
+  return TIERS.find((t) => ratio >= t.min) || TIERS[TIERS.length - 1];
+}
+
 /* ------------------------------------------------------------ component */
 
 export default function LogoTest({ colors, roles, cvd }) {
@@ -65,6 +91,27 @@ export default function LogoTest({ colors, roles, cvd }) {
 
   const mark = getMark(markId);
   const c = (hex) => simulateCVD(hex, cvd);
+
+  /* The large preview is bounded by its own container rather than a fixed
+     number, so it fills the space available without ever overflowing it. */
+  const stageRef = useRef(null);
+  const [largeMax, setLargeMax] = useState(360);
+  const [largeSize, setLargeSize] = useState(240);
+
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const available = Math.floor(
+        Math.min(entry.contentRect.width, window.innerHeight * 0.55)
+      );
+      const ceiling = Math.max(LARGE_MIN, available);
+      setLargeMax(ceiling);
+      setLargeSize((current) => Math.min(current, ceiling));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const renderMark = (size, aColor, bColor, flatten = null) =>
     upload ? (
@@ -108,6 +155,39 @@ export default function LogoTest({ colors, roles, cvd }) {
 
   const pairRatio = contrastRatio(fg, bg);
   const guidance = markGuidance(pairRatio);
+
+  const [grouped, setGrouped] = useState(true);
+
+  /* Computed once so switching grouping never recalculates contrast. */
+  const combos = useMemo(() => {
+    const out = [];
+    for (const ground of colors) {
+      for (const markColor of colors) {
+        if (markColor === ground) continue;
+        const ratio = contrastRatio(markColor, ground);
+        out.push({ markColor, ground, ratio, tier: tierFor(ratio).id });
+      }
+    }
+    return out.sort((a, b) => b.ratio - a.ratio);
+  }, [colors]);
+
+  const renderTile = ({ markColor, ground, ratio }) => {
+    const tier = tierFor(ratio);
+    return (
+      <button
+        key={`${markColor}-${ground}`}
+        className="combo-tile"
+        data-selected={(fg === markColor && bg === ground) || undefined}
+        onClick={() => { setFg(markColor); setBg(ground); }}
+        title={`${markColor} on ${ground} — ${ratio.toFixed(2)}:1 · ${tier.label}`}
+        style={{ background: c(ground) }}
+      >
+        <span className="combo-mark" style={{ color: c(markColor) }}>{tier.mark}</span>
+        {renderMark(40, markColor, markColor, markColor)}
+        <span className="combo-ratio" style={{ color: c(markColor) }}>{ratio.toFixed(1)}</span>
+      </button>
+    );
+  };
 
   const lightest = [...colors].sort((a, b) => hexToOklch(b).L - hexToOklch(a).L)[0];
   const darkest = [...colors].sort((a, b) => hexToOklch(a).L - hexToOklch(b).L)[0];
@@ -243,7 +323,7 @@ export default function LogoTest({ colors, roles, cvd }) {
         </div>
       )}
 
-      {/* ── size ramp for the focused pairing ───────────────────────── */}
+      {/* ── large stage, then the small-size ramp ───────────────────── */}
       <div>
         <div className="preview-caption">
           <span className="preview-caption-title">At size</span>
@@ -254,22 +334,49 @@ export default function LogoTest({ colors, roles, cvd }) {
         </div>
 
         <div
-          className="preview-frame"
-          style={{ background: c(bg), padding: 'var(--space-6)' }}
+          className="preview-frame logo-stage"
+          ref={stageRef}
+          style={{ background: c(bg) }}
         >
-          <div className="row" style={{ gap: 'var(--space-8)', alignItems: 'flex-end', justifyContent: 'center' }}>
-            {TEST_SIZES.map((s) => (
-              <div key={s.px} style={{ display: 'grid', gap: 8, justifyItems: 'center' }}>
-                {renderMark(s.px, fg, secondary)}
-                <span
-                  className="mono"
-                  style={{ fontSize: 10, color: c(fg), opacity: 0.7, textAlign: 'center' }}
-                >
-                  {s.label}<br />{s.note}
-                </span>
-              </div>
-            ))}
+          {renderMark(largeSize, fg, secondary)}
+        </div>
+
+        <div className="logo-size-control" style={{ marginTop: 'var(--space-3)' }}>
+          <div className="picker-row-label">
+            <span className="label">Large preview</span>
+            <span className="picker-value mono">{largeSize}px</span>
           </div>
+          <input
+            type="range"
+            className="logo-size-slider"
+            min={LARGE_MIN}
+            max={largeMax}
+            step={4}
+            value={largeSize}
+            onChange={(e) => setLargeSize(+e.target.value)}
+            aria-label="Large preview size"
+          />
+          <p className="panel-note">
+            Ranges from {LARGE_MIN}px up to whatever the frame can hold ({largeMax}px here) — the
+            ceiling follows the window, so the mark never breaks out of its container.
+          </p>
+        </div>
+
+        <div
+          className="preview-frame logo-ramp"
+          style={{ background: c(bg), marginTop: 'var(--space-4)' }}
+        >
+          {TEST_SIZES.map((s) => (
+            <div key={s.px} style={{ display: 'grid', gap: 8, justifyItems: 'center' }}>
+              {renderMark(s.px, fg, secondary)}
+              <span
+                className="mono"
+                style={{ fontSize: 10, color: c(fg), opacity: 0.7, textAlign: 'center' }}
+              >
+                {s.label}<br />{s.note}
+              </span>
+            </div>
+          ))}
         </div>
 
         <div className="row" style={{ marginTop: 'var(--space-3)', gap: 'var(--space-4)' }}>
@@ -371,66 +478,51 @@ export default function LogoTest({ colors, roles, cvd }) {
         </p>
       </div>
 
-      {/* ── full combination matrix ─────────────────────────────────── */}
+      {/* ── full combination matrix, grouped by suitability ─────────── */}
       <div>
         <div className="preview-caption">
           <span className="preview-caption-title">Every combination</span>
           <span className="preview-caption-note">
-            {colors.length * (colors.length - 1)} pairs — click one to load it above
+            {combos.length} pairs — click one to load it above
           </span>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(auto-fill, minmax(96px, 1fr))`,
-            gap: 'var(--space-2)',
-          }}
-        >
-          {colors.flatMap((ground) =>
-            colors
-              .filter((markColor) => markColor !== ground)
-              .map((markColor) => {
-                const ratio = contrastRatio(markColor, ground);
-                const g = markGuidance(ratio);
-                return (
-                  <button
-                    key={`${markColor}-${ground}`}
-                    onClick={() => { setFg(markColor); setBg(ground); }}
-                    title={`${markColor} on ${ground} — ${ratio.toFixed(2)}:1`}
-                    style={{
-                      background: c(ground),
-                      border: '1px solid rgba(128,128,128,0.2)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: 'var(--space-3)',
-                      display: 'grid',
-                      justifyItems: 'center',
-                      gap: 4,
-                      opacity: fg === markColor && bg === ground ? 1 : 0.92,
-                      outline: fg === markColor && bg === ground ? '2px solid var(--border-focus)' : 'none',
-                      outlineOffset: 2,
-                    }}
-                  >
-                    {renderMark(40, markColor, markColor, markColor)}
-                    <span
-                      className="mono"
-                      style={{
-                        fontSize: 9,
-                        color: c(markColor),
-                        opacity: 0.85,
-                      }}
-                    >
-                      {ratio.toFixed(1)}
-                    </span>
-                    {g.tone === 'bad' && (
-                      <span style={{ fontSize: 9, color: c(markColor), opacity: 0.7 }}>
-                        <IconWarning width={9} height={9} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })
-          )}
+        <div className="row" style={{ marginBottom: 'var(--space-4)' }}>
+          <div className="filter-bar">
+            <button className="filter-btn" aria-pressed={grouped} onClick={() => setGrouped(true)}>
+              Grouped by suitability
+            </button>
+            <button className="filter-btn" aria-pressed={!grouped} onClick={() => setGrouped(false)}>
+              By contrast
+            </button>
+          </div>
+        </div>
+
+        {grouped ? (
+          <div className="combo-groups">
+            {TIERS.map((tier) => {
+              const items = combos.filter((x) => x.tier === tier.id);
+              if (!items.length) return null;
+              return (
+                <div key={tier.id}>
+                  <div className="combo-group-head">
+                    <span>{tier.mark} {tier.label}</span>
+                    <span className="mono">{items.length}</span>
+                  </div>
+                  <p className="panel-note" style={{ marginBottom: 'var(--space-3)' }}>{tier.note}</p>
+                  <div className="combo-grid">{items.map(renderTile)}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="combo-grid">{combos.map(renderTile)}</div>
+        )}
+
+        <div className="combo-legend" style={{ marginTop: 'var(--space-4)' }}>
+          {TIERS.map((t) => (
+            <span key={t.id}>{t.mark} {t.label} — {t.range}</span>
+          ))}
         </div>
       </div>
 

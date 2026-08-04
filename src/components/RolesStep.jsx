@@ -4,7 +4,7 @@ import { bestTextOn, contrastRatio } from '../lib/color.js';
 import { IconArrowRight, IconWarning } from './Icons.jsx';
 
 const TIERS = [
-  { id: 'hero', label: 'Hero', size: 148, note: 'One colour. Buttons, brand moments, the thing people remember.' },
+  { id: 'hero', label: 'Hero', size: 296, note: 'One colour. Buttons, brand moments, the thing people remember.' },
   { id: 'accent', label: 'Accents', size: 96, note: 'Supporting colours used in moments, never as the whole page.' },
   { id: 'light-neutral', label: 'Light neutrals', size: 72, note: 'Page and card backgrounds.' },
   { id: 'dark-neutral', label: 'Dark neutrals', size: 72, note: 'Body text and dark sections.' },
@@ -12,10 +12,20 @@ const TIERS = [
 
 function Disc({ hex, size, label, onDragStart }) {
   const fg = bestTextOn(hex);
+  // Type inside the disc scales with it, or a 296px hero reads as a huge
+  // circle with a caption lost in the middle of it.
+  const scale = size >= 200 ? 1.7 : 1;
+
   return (
     <div
       className="role-disc"
-      style={{ background: hex, width: size, height: size, color: fg }}
+      style={{
+        background: hex,
+        width: size,
+        height: size,
+        color: fg,
+        '--disc-scale': scale,
+      }}
       draggable
       onDragStart={() => onDragStart(hex)}
       title={`${hex} — drag to another tier to change its role`}

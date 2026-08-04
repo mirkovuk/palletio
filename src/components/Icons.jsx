@@ -174,3 +174,11 @@ export const IconSave = (p) => (
     <path d="M5 2.5v3.6h5V2.5M5 13.5V9.4h6v4.1" />
   </svg>
 );
+
+export const IconImage = (p) => (
+  <svg {...base} {...p}>
+    <rect x="2" y="3" width="12" height="10" rx="1.5" />
+    <circle cx="5.8" cy="6.4" r="1.1" />
+    <path d="M2.4 11.2 5.6 8.4l2.2 2 2.3-2.6 3.5 3.4" />
+  </svg>
+);

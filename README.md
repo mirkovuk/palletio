@@ -76,6 +76,35 @@ buttons are safe; the canvas isn't.
 
 ---
 
+## The description
+
+Step 2 writes a short read of what the palette feels like, updating live as you
+change colours. It's rule-based, not a model call — a model would be slower
+than dragging, would need a key, and would produce something *plausible* rather
+than something *derived*. If the sliders said muted and the sentence said
+vibrant, the tool would have lied. Rules make that impossible.
+
+One deliberate divergence: the Character sliders exclude neutrals (including
+them drags every palette towards muted and tells you nothing about your
+colours), but the description counts them, because neutrals occupy the most
+area in a real layout. Three neons on near-black is a dark palette. The
+description says so.
+
+## Imagery in the previews
+
+Off by default, and that's a design position rather than laziness: a photograph
+brings its own colours into a preview whose whole purpose is judging yours.
+
+Turned on, the default treatment is duotone — the image is flattened to
+luminance and remapped between two of your palette colours via CSS blend modes.
+It contributes composition and texture without a single foreign hue. Tinted and
+Original are available; Original is honest about the trade.
+
+No key needed — Lorem Picsum works out of the box but ignores the subject. An
+Unsplash Access Key in Settings enables real search plus their colour filter, so
+images come back already near your palette. Access Keys are public by design
+and safe in a browser.
+
 ## The colour picker
 
 Custom, not the OS one, and it works in OKLCH rather than HSL. Two reasons that

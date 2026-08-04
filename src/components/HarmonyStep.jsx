@@ -1,4 +1,5 @@
 import { findIssues, paletteMetrics, healthScore, scoreBand } from '../lib/harmony.js';
+import { describePalette } from '../lib/describe.js';
 import { IconCheck, IconArrowRight, IconWarning, IconLock } from './Icons.jsx';
 
 const SEVERITY_TONE = { high: 'bad', medium: 'warn', low: 'info' };
@@ -31,6 +32,34 @@ export function Metrics({ colors }) {
         Where the palette sits overall. Neutrals are excluded — including them would drag every
         palette towards muted and tell you nothing. There is no correct position on these; they are
         for noticing when a palette is further from your intent than you thought.
+      </p>
+    </div>
+  );
+}
+
+export function Description({ colors }) {
+  const read = describePalette(colors);
+  if (!read) return null;
+
+  return (
+    <div className="describe">
+      <p className="describe-headline">{read.headline}</p>
+      <p className="describe-body">{read.body}</p>
+
+      {read.associations.length > 0 && (
+        <p className="describe-meta">
+          <span className="label">Reads like</span> {read.associations.join(' · ')}
+        </p>
+      )}
+
+      {read.cautions.map((c, i) => (
+        <p className="describe-caution" key={i}>{c}</p>
+      ))}
+
+      <p className="describe-note">
+        Written from the measurements below, so the two can never disagree — with one exception:
+        the sliders exclude neutrals, while this reads the palette as a whole, because neutrals
+        take up the most space in a real layout.
       </p>
     </div>
   );
@@ -178,6 +207,7 @@ export default function HarmonyStep({ colors, locked, onApplyFix, onRemoveAt, on
         <div className="panel-head">
           <h3 className="panel-title">Palette character</h3>
         </div>
+        <Description colors={colors} />
         <Metrics colors={colors} />
       </div>
     </>

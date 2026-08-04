@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { suggestLightNeutrals, suggestDarkNeutrals, suggestHarmony } from '../lib/suggest.js';
 import { findIssues, coverage } from '../lib/harmony.js';
-import { Metrics } from './HarmonyStep.jsx';
+import { Metrics, Description } from './HarmonyStep.jsx';
 import { IconShuffle, IconPlus, IconSparkle, IconArrowRight, IconCheck } from './Icons.jsx';
 
 const NEXT = {
@@ -159,6 +159,7 @@ export default function Insights({ colors, step, onAdd, onGoTo, addedCounts }) {
             <div className="insight-head">
               <h3 className="insight-title">Character</h3>
             </div>
+            <Description colors={colors} />
             <Metrics colors={colors} />
           </div>
         </>

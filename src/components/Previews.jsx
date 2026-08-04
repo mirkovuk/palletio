@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { getVibe, surfaceMap } from '../lib/vibes.js';
 import { simulateCVD, bestTextOn, mix, hexToOklch, oklchToHex } from '../lib/color.js';
+import { treatmentStyles } from '../lib/imagery.js';
 
 /**
  * Previews render at a fixed design size and scale to fit. Laying them out
@@ -34,6 +35,30 @@ function Scaled({ width, height, children }) {
       >
         {children}
       </div>
+    </div>
+  );
+}
+
+/**
+ * A photograph, treated so it contributes composition without contributing
+ * colour. The duotone is built from CSS blend modes rather than canvas, which
+ * avoids a CORS round trip on every image and keeps it live as the palette
+ * changes.
+ */
+function TreatedImage({ image, treatment, map, style }) {
+  if (!image) return null;
+  const { filter, layers } = treatmentStyles(treatment, {
+    shadow: map.ink,
+    highlight: map.page,
+    hero: map.hero,
+  });
+
+  return (
+    <div className="image-layer" style={style}>
+      <img src={image.url} alt="" style={{ filter }} loading="lazy" />
+      {layers.map((layer, i) => (
+        <span key={i} className="image-tint" style={layer} />
+      ))}
     </div>
   );
 }
@@ -106,7 +131,7 @@ function Ornament({ vibe, map, cv }) {
   );
 }
 
-function HeroPreview({ map, vibe, cv }) {
+function HeroPreview({ map, vibe, cv, image, treatment }) {
   const c = (hex) => simulateCVD(hex, cv);
   const heroText = bestTextOn(map.hero, [map.page, map.ink, '#FFFFFF', '#000000']);
   const airy = vibe.density === 'airy';
@@ -124,7 +149,16 @@ function HeroPreview({ map, vibe, cv }) {
         overflow: 'hidden',
       }}
     >
-      <Ornament vibe={vibe} map={map} cv={cv} />
+      {image ? (
+        <TreatedImage
+          image={image}
+          treatment={treatment}
+          map={map}
+          style={{ left: '52%', right: 0, top: 0, bottom: 0, inset: 'auto' }}
+        />
+      ) : (
+        <Ornament vibe={vibe} map={map} cv={cv} />
+      )}
 
       <nav
         style={{
@@ -249,7 +283,7 @@ function HeroPreview({ map, vibe, cv }) {
   );
 }
 
-function SocialPreview({ map, vibe, cv }) {
+function SocialPreview({ map, vibe, cv, image, treatment }) {
   const c = (hex) => simulateCVD(hex, cv);
   const onHero = bestTextOn(map.hero, [map.page, map.ink, '#FFFFFF', '#000000']);
 
@@ -267,18 +301,22 @@ function SocialPreview({ map, vibe, cv }) {
         flexDirection: 'column',
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          width: 300,
-          height: 300,
-          borderRadius: vibe.shape === 'blob' || vibe.shape === 'arc' ? '50%' : vibe.radius,
-          background: c(map.accent),
-          right: -90,
-          bottom: -90,
-          opacity: 0.9,
-        }}
-      />
+      {image ? (
+        <TreatedImage image={image} treatment={treatment} map={map} style={{ opacity: 0.85 }} />
+      ) : (
+        <div
+          style={{
+            position: 'absolute',
+            width: 300,
+            height: 300,
+            borderRadius: vibe.shape === 'blob' || vibe.shape === 'arc' ? '50%' : vibe.radius,
+            background: c(map.accent),
+            right: -90,
+            bottom: -90,
+            opacity: 0.9,
+          }}
+        />
+      )}
 
       <div style={{ padding: 36, position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div
@@ -433,7 +471,9 @@ function UIKitPreview({ map, vibe, cv }) {
   );
 }
 
-export default function Previews({ colors, roles, vibeId, onVibeChange, cvd, onCvdChange }) {
+export default function Previews({
+  colors, roles, vibeId, onVibeChange, cvd, onCvdChange, image, treatment,
+}) {
   const vibe = getVibe(vibeId);
   const map = surfaceMap(colors, roles);
 
@@ -454,11 +494,14 @@ export default function Previews({ colors, roles, vibeId, onVibeChange, cvd, onC
       <div>
         <div className="preview-caption">
           <span className="preview-caption-title">Landing page</span>
-          <span className="preview-caption-note">1200 × 680 — scaled to fit</span>
+          <span className="preview-caption-note">
+            1200 × 680 — scaled to fit
+            {image && ` · photo: ${image.credit}`}
+          </span>
         </div>
         <div className="preview-frame">
           <Scaled width={1200} height={680}>
-            <HeroPreview map={map} vibe={vibe} cv={cvd} />
+            <HeroPreview map={map} vibe={vibe} cv={cvd} image={image} treatment={treatment} />
           </Scaled>
         </div>
       </div>
@@ -483,7 +526,7 @@ export default function Previews({ colors, roles, vibeId, onVibeChange, cvd, onC
           </div>
           <div className="preview-frame">
             <Scaled width={432} height={540}>
-              <SocialPreview map={map} vibe={vibe} cv={cvd} />
+              <SocialPreview map={map} vibe={vibe} cv={cvd} image={image} treatment={treatment} />
             </Scaled>
           </div>
         </div>

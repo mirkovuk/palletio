@@ -2,13 +2,14 @@ import { useState } from 'react';
 import Previews from './Previews.jsx';
 import LogoTest from './LogoTest.jsx';
 import { VIBES } from '../lib/vibes.js';
+import { findImages, TREATMENTS, VIBE_QUERIES } from '../lib/imagery.js';
 import { CVD_TYPES } from '../lib/color.js';
 import { buildPairings } from '../lib/roles.js';
 import {
   toCSS, toSCSS, toTailwind, toJSON, toHexList, toSVG, toPNGBlob,
   toASEBlob, toReportHTML, download, copyText, encodeShare,
 } from '../lib/exporters.js';
-import { IconDownload, IconCopy, IconLink, IconSave } from './Icons.jsx';
+import { IconDownload, IconCopy, IconLink, IconSave, IconImage, IconShuffle, IconX } from './Icons.jsx';
 
 const CODE_TABS = [
   { id: 'css', label: 'CSS variables', build: toCSS },
@@ -18,9 +19,42 @@ const CODE_TABS = [
 ];
 
 export default function ExportStep({
-  colors, roles, name, vibeId, onVibeChange, cvd, onCvdChange, onToast, onSave,
+  colors, roles, name, vibeId, onVibeChange, cvd, onCvdChange, onToast, onSave, settings,
 }) {
   const [codeTab, setCodeTab] = useState('css');
+
+  /* Imagery is off until asked for. A photograph brings its own colours into
+     a preview whose entire purpose is judging yours, so it should never
+     appear by default. */
+  const [imageOn, setImageOn] = useState(false);
+  const [images, setImages] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [treatment, setTreatment] = useState('duotone');
+  const [imageBusy, setImageBusy] = useState(false);
+  const [imageError, setImageError] = useState('');
+  const [source, setSource] = useState(null);
+
+  const hero = colors.find((hex) => roles[hex] === 'hero') || colors[0];
+
+  const loadImages = async () => {
+    setImageBusy(true);
+    setImageError('');
+    try {
+      const result = await findImages({
+        query: VIBE_QUERIES[vibeId] || 'abstract texture',
+        hero,
+        settings,
+      });
+      setImages(result.images);
+      setSource(result.source);
+      setSelected(result.images[0] || null);
+      setImageOn(true);
+    } catch (e) {
+      setImageError(e.message || 'Could not load imagery.');
+    } finally {
+      setImageBusy(false);
+    }
+  };
 
   const slug = (name || 'palette').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'palette';
   const code = (CODE_TABS.find((t) => t.id === codeTab) || CODE_TABS[0]).build(colors, roles, { name });
@@ -102,6 +136,62 @@ export default function ExportStep({
           </div>
         </div>
 
+        <div className="image-picker" style={{ marginBottom: 'var(--space-5)' }}>
+          <div className="row">
+            {!imageOn ? (
+              <button className="btn btn-sm" onClick={loadImages} disabled={imageBusy}>
+                <IconImage /> {imageBusy ? 'Finding images…' : 'Preview with tone-minded imagery'}
+              </button>
+            ) : (
+              <>
+                <button className="btn btn-sm" onClick={() => setImageOn(false)}>
+                  <IconX /> Remove imagery
+                </button>
+                <button className="btn btn-sm" onClick={loadImages} disabled={imageBusy}>
+                  <IconShuffle /> Different images
+                </button>
+                <div className="filter-bar">
+                  {TREATMENTS.map((t) => (
+                    <button
+                      key={t.id}
+                      className="filter-btn"
+                      aria-pressed={treatment === t.id}
+                      onClick={() => setTreatment(t.id)}
+                      title={t.note}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {imageError && <p className="error-note">{imageError}</p>}
+
+          {imageOn && images.length > 0 && (
+            <>
+              <div className="image-thumbs">
+                {images.map((img) => (
+                  <button
+                    key={img.id}
+                    className="image-thumb"
+                    aria-pressed={selected?.id === img.id}
+                    onClick={() => setSelected(img)}
+                  >
+                    <img src={img.thumb} alt="" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+              <p className="panel-note">
+                {TREATMENTS.find((t) => t.id === treatment)?.note}
+                {source === 'picsum' && ' · Using Lorem Picsum, which needs no key but ignores the subject. Add an Unsplash access key in Settings for images matched to your palette and vibe.'}
+                {source === 'unsplash' && ' · Photographs from Unsplash, filtered towards your hero colour.'}
+              </p>
+            </>
+          )}
+        </div>
+
         <Previews
           colors={colors}
           roles={roles}
@@ -109,6 +199,8 @@ export default function ExportStep({
           onVibeChange={onVibeChange}
           cvd={cvd}
           onCvdChange={onCvdChange}
+          image={imageOn ? selected : null}
+          treatment={treatment}
         />
       </div>
 

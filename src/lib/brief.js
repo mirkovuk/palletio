@@ -118,6 +118,7 @@ export const defaultSettings = {
   apiKey: '',
   model: 'claude-sonnet-4-6',
   proxyUrl: '',
+  unsplashKey: '',
 };
 
 export function loadSettings() {

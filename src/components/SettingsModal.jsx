@@ -44,6 +44,25 @@ export default function SettingsModal({ settings, onChange, onClose, onLoadPalet
 
         <div className="col">
           <div className="field">
+            <label className="label" htmlFor="unsplash">Unsplash access key — for imagery in the previews</label>
+            <input
+              id="unsplash"
+              className="input mono"
+              placeholder="Optional"
+              value={draft.unsplashKey || ''}
+              onChange={set('unsplashKey')}
+            />
+          </div>
+          <p className="panel-note">
+            Without a key the previews use Lorem Picsum, which works with no setup but ignores the
+            subject. An Unsplash key enables real search and their colour filter, so images come
+            back already near your palette. Free at unsplash.com/developers — an Access Key is
+            public by design and safe in a browser, unlike an API secret.
+          </p>
+        </div>
+
+        <div className="col">
+          <div className="field">
             <span className="label">Brand brief connection</span>
             <div className="filter-bar">
               {[

@@ -297,6 +297,7 @@ export default function App() {
                 onCvdChange={setCvd}
                 onToast={showToast}
                 onSave={savePresent}
+                settings={settings}
               />
             )}
           </div>
