@@ -1297,6 +1297,16 @@ button { cursor: pointer; }
   gap: var(--space-2);
 }
 
+/* The recommended tier gets 1.5× the footprint — these are the pairs that
+   get chosen, so they are worth looking at rather than counting. */
+.combo-grid[data-scale='large'] {
+  grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+  gap: var(--space-3);
+}
+.combo-grid[data-scale='large'] .combo-tile { padding: var(--space-4) var(--space-3) var(--space-3); }
+.combo-grid[data-scale='large'] .combo-mark { font-size: 14px; top: 6px; left: 8px; }
+.combo-grid[data-scale='large'] .combo-ratio { font-size: 11px; }
+
 .combo-tile {
   border: 1px solid rgba(128, 128, 128, 0.2);
   border-radius: var(--radius-sm);

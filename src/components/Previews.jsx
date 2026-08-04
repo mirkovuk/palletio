@@ -206,7 +206,7 @@ function HeroSplit({ map, vibe, cv, image, treatment, imageStrength, hardEdge })
         </span>
       </nav>
 
-      <div style={{ padding: `${u(24)} ${u(pad)} 0`, width: '47%', position: 'relative', zIndex: 2, flex: 1 }}>
+      <div style={{ padding: `${u(24)} ${u(pad)} ${u(40)}`, width: '47%', position: 'relative', zIndex: 2, flex: 1 }}>
         <div
           style={{
             display: 'inline-block', fontFamily: vibe.mono, fontSize: u(11),
@@ -244,18 +244,6 @@ function HeroSplit({ map, vibe, cv, image, treatment, imageStrength, hardEdge })
         </div>
       </div>
 
-      <div
-        style={{
-          padding: `${u(18)} ${u(pad)}`, background: c(map.surface),
-          display: 'flex', gap: u(40), alignItems: 'center',
-          fontFamily: vibe.mono, fontSize: u(12), letterSpacing: '0.08em',
-          textTransform: 'uppercase', opacity: 0.85, zIndex: 2, position: 'relative',
-        }}
-      >
-        {['Brand', 'Motion', 'Editorial', 'Type'].map((x) => <span key={x}>{x}</span>)}
-        <span style={{ flex: 1 }} />
-        <span style={{ color: c(map.hero) }}>Glasgow</span>
-      </div>
     </div>
   );
 }

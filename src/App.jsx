@@ -25,7 +25,33 @@ const STEPS = [
   { id: 'export', label: 'Use it', Icon: IconDownload },
 ];
 
-const DEFAULT_PALETTE = ['#FFC5B9', '#E7E6A9', '#2A1F1A', '#FAF7F0'];
+/**
+ * The palette the app opens with.
+ *
+ * Chosen by running candidates through this tool's own engine rather than by
+ * eye: full role coverage, no harmony flags, health 100, and ten pairings that
+ * pass AA for body text. The hero holds white text at 4.9:1, so the Statement
+ * layout — which puts the hero behind a headline as a flat field — works
+ * immediately rather than needing a fix first.
+ *
+ * A default that fails its own checks is a bad first impression for a tool
+ * whose entire job is catching that.
+ *
+ * The olive went through two revisions for reasons the engine caught and the
+ * eye would not have: a sage green at #6E8B7E fell below the neutral
+ * threshold and was being classified as a third light neutral rather than an
+ * accent, and a truer green was flagged as a hue orphan against the warm
+ * colours. Pulling it towards olive keeps the contrast without the palette
+ * reading as two unrelated halves.
+ */
+const DEFAULT_PALETTE = [
+  '#FAF7F2', // page
+  '#E7DFD1', // card surface
+  '#B4543C', // hero — terracotta
+  '#55693F', // accent — olive
+  '#DFAE55', // accent — ochre
+  '#1A1815', // ink
+];
 
 export default function App() {
   const [colors, setColors] = useState(DEFAULT_PALETTE);

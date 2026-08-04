@@ -179,7 +179,10 @@ export default function LogoTest({ colors, roles, cvd, state, onState }) {
     return out.sort((a, b) => b.ratio - a.ratio);
   }, [colors]);
 
-  const renderTile = ({ markColor, ground, ratio }) => {
+  /* The recommended tier is drawn half again as large. These are the pairs
+     you will actually pick from, so they get the space to be judged rather
+     than merely counted. */
+  const renderTile = ({ markColor, ground, ratio }, large = false) => {
     const tier = tierFor(ratio);
     return (
       <button
@@ -191,7 +194,7 @@ export default function LogoTest({ colors, roles, cvd, state, onState }) {
         style={{ background: c(ground) }}
       >
         <span className="combo-mark" style={{ color: c(markColor) }}>{tier.mark}</span>
-        {renderMark(40, markColor, markColor, markColor)}
+        {renderMark(large ? 60 : 40, markColor, markColor, markColor)}
         <span className="combo-ratio" style={{ color: c(markColor) }}>{ratio.toFixed(1)}</span>
       </button>
     );
@@ -467,7 +470,11 @@ export default function LogoTest({ colors, roles, cvd, state, onState }) {
                   justifyContent: 'center',
                 }}
               >
-                {[64, 32, 16].map((px) => (
+                {/* Two sizes, not three. The third was small enough that a
+                    wordmark turned to grey mush, which tells you nothing
+                    about the colour pair — the small-size question is
+                    already answered by the ramp above. */}
+                {[104, 52].map((px) => (
                   <div key={px}>{renderMark(px, v.ink, v.ink, v.ink)}</div>
                 ))}
               </div>
@@ -518,13 +525,15 @@ export default function LogoTest({ colors, roles, cvd, state, onState }) {
                     <span className="mono">{items.length}</span>
                   </div>
                   <p className="panel-note" style={{ marginBottom: 'var(--space-3)' }}>{tier.note}</p>
-                  <div className="combo-grid">{items.map(renderTile)}</div>
+                  <div className="combo-grid" data-scale={tier.id === 'best' ? 'large' : undefined}>
+                    {items.map((item) => renderTile(item, tier.id === 'best'))}
+                  </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="combo-grid">{combos.map(renderTile)}</div>
+          <div className="combo-grid">{combos.map((item) => renderTile(item))}</div>
         )}
 
         <div className="combo-legend" style={{ marginTop: 'var(--space-4)' }}>
