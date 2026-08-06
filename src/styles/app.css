@@ -1339,3 +1339,147 @@ button { cursor: pointer; }
   color: var(--fg-muted);
 }
 .combo-legend span { display: flex; gap: var(--space-1); align-items: center; }
+
+/* ────────────────────────────────────────────────────────────── splash */
+
+.splash {
+  position: relative;
+  min-height: 100%;
+  background: var(--splash-bg);
+  color: var(--splash-fg);
+  display: grid;
+  place-items: center;
+  padding: var(--space-8) var(--space-6) var(--space-12);
+  overflow-y: auto;
+}
+
+.splash-inner {
+  width: 100%;
+  max-width: 1280px;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+/* The wordmark is sized against the viewport rather than a fixed width, so a
+   photographic mark drawn for a wide screen does not become the whole page on
+   a phone. Capped so it never outgrows its own resolution. */
+.splash-mark {
+  width: min(92vw, 1180px);
+  display: grid;
+  place-items: center;
+  margin-bottom: clamp(var(--space-6), 4vw, var(--space-12));
+}
+
+.splash-mark-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* Blend so a mark shot on cream sits on the splash colour without a seam.
+     Harmless if the file has real transparency. */
+  mix-blend-mode: multiply;
+}
+
+[data-theme='dark'] .splash-mark-image { mix-blend-mode: screen; }
+
+.splash-mark-fallback {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(4rem, 17vw, 15rem);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  opacity: 0.9;
+}
+
+.splash-headline {
+  font-size: clamp(1.5rem, 4.2vw, 3.25rem);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin: 0 0 clamp(var(--space-8), 5vw, var(--space-16));
+  line-height: 1.05;
+}
+
+.splash-start {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: gap var(--duration-base) var(--ease);
+}
+.splash-start:hover { gap: var(--space-5); }
+.splash-start svg { transition: transform var(--duration-base) var(--ease); }
+.splash-start:hover svg { transform: translateX(2px); }
+
+.splash-copy {
+  display: grid;
+  gap: 2px;
+  margin: clamp(var(--space-10), 7vw, var(--space-16)) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--splash-muted);
+  max-width: 62ch;
+}
+
+.splash-version {
+  position: absolute;
+  left: var(--space-5);
+  bottom: var(--space-5);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--splash-faint);
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .splash { padding: var(--space-6) var(--space-4) var(--space-10); }
+  .splash-copy { font-size: var(--text-xs); }
+  .splash-version { position: static; margin-top: var(--space-8); }
+}
+
+/* Returning-visitor variant. The bar is scaled rather than width-animated so
+   it runs on the compositor and cannot stutter while React re-renders. */
+.splash-progress {
+  width: min(280px, 60vw);
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: color-mix(in oklab, var(--splash-fg) 14%, transparent);
+  overflow: hidden;
+  margin-bottom: var(--space-6);
+}
+
+.splash-progress-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--splash-fg);
+  transform-origin: left center;
+  transform: scaleX(0);
+  border-radius: var(--radius-full);
+}
+
+.splash-skip {
+  background: transparent;
+  border: none;
+  color: var(--splash-faint);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+}
+.splash-skip:hover { color: var(--splash-fg); }
+
+.splash[data-returning] .splash-headline {
+  margin-bottom: clamp(var(--space-6), 4vw, var(--space-10));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-progress { display: none; }
+}

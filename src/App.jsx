@@ -6,6 +6,7 @@ import RolesStep from './components/RolesStep.jsx';
 import ExportStep from './components/ExportStep.jsx';
 import Insights from './components/Insights.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
+import Splash from './components/Splash.jsx';
 import {
   IconPalette, IconSparkle, IconEye, IconTag, IconDownload,
   IconSun, IconMoon, IconSettings,
@@ -44,6 +45,8 @@ const STEPS = [
  * colours. Pulling it towards olive keeps the contrast without the palette
  * reading as two unrelated halves.
  */
+const VISITED_KEY = 'palletio.visited.v1';
+
 const DEFAULT_PALETTE = [
   '#FAF7F2', // page
   '#E7DFD1', // card surface
@@ -59,6 +62,29 @@ export default function App() {
   const [locked, setLocked] = useState([]);
   const [name, setName] = useState('Untitled palette');
   const [step, setStep] = useState('build');
+
+  /* The splash is skipped outright when the URL carries a palette. A shared
+     link should open on the client's colours, not on a landing page they
+     have to click past — and it is checked here at first render rather than
+     in an effect, so the splash never flashes before disappearing. */
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const hash = window.location.hash;
+    return !hash.startsWith('#p=') && hash !== '#app';
+  });
+
+  /* Read once at first render rather than on every mount, so the greeting
+     does not change under the visitor while they are looking at it. */
+  const [returningVisitor] = useState(() => {
+    try {
+      return localStorage.getItem(VISITED_KEY) === '1';
+    } catch {
+      // Private browsing, or storage disabled. Treat as a first visit —
+      // showing the pitch to a returning user is a much smaller failure
+      // than auto-advancing past someone who has never seen this before.
+      return false;
+    }
+  });
   const [theme, setTheme] = useState('light');
   const [vibeId, setVibeId] = useState('modernist');
   const [cvd, setCvd] = useState('normal');
@@ -133,6 +159,18 @@ export default function App() {
   }, [toast]);
 
   const showToast = useCallback((message) => setToast(message), []);
+
+  const enterApp = useCallback(() => {
+    setShowSplash(false);
+    try {
+      localStorage.setItem(VISITED_KEY, '1');
+    } catch {
+      /* nothing to do — they simply get the first-visit screen again */
+    }
+    /* Recorded in the URL so a reload, or a link someone sends to a
+       colleague mid-session, lands straight in the tool. */
+    if (!window.location.hash) window.location.hash = 'app';
+  }, []);
 
   /* ------------------------------------------------------------- actions */
 
@@ -224,6 +262,10 @@ export default function App() {
   /* -------------------------------------------------------------- render */
 
   const stepProps = { colors, roles, onGoTo: setStep };
+
+  if (showSplash) {
+    return <Splash onStart={enterApp} returning={returningVisitor} />;
+  }
 
   return (
     <div className="app">

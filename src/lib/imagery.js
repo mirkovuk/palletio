@@ -18,6 +18,7 @@
  */
 
 import { hexToOklch, oklchToHex } from './color.js';
+import { resolveWorker } from '../config.js';
 
 export const TREATMENTS = [
   {
@@ -118,10 +119,19 @@ function withUTM(url) {
  * image is put to use — it is how photographers get credited with a download.
  * Fire-and-forget: a failure here should never interrupt the preview.
  */
-export function registerUse(image, accessKey) {
-  if (!image?.downloadLocation || !accessKey) return;
+export function registerUse(image, settings) {
+  if (!image?.downloadLocation) return;
+
+  const worker = resolveWorker(settings);
+  if (worker) {
+    fetch(`${worker}/images/used?url=${encodeURIComponent(image.downloadLocation)}`).catch(() => {});
+    return;
+  }
+
+  const key = settings?.unsplashKey?.trim();
+  if (!key) return;
   fetch(image.downloadLocation, {
-    headers: { Authorization: `Client-ID ${accessKey}` },
+    headers: { Authorization: `Client-ID ${key}` },
   }).catch(() => {});
 }
 
@@ -130,6 +140,28 @@ export function registerUse(image, accessKey) {
  * than failing, so the feature always does something.
  */
 export async function findImages({ query, hero, settings, count = 6 }) {
+  const worker = resolveWorker(settings);
+  const bucket = hero ? nearestBucket(hero) : null;
+
+  /* Worker first. It holds the key server-side, which is the only way every
+     visitor gets real imagery — a key in Settings lives in one browser and
+     helps exactly one person. */
+  if (worker) {
+    try {
+      const params = new URLSearchParams({ query });
+      if (bucket) params.set('color', bucket);
+      const res = await fetch(`${worker}/images?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.images?.length) {
+          return { source: 'unsplash', images: data.images.slice(0, count), viaWorker: true };
+        }
+      }
+    } catch (e) {
+      console.warn('Worker imagery lookup failed, falling back:', e.message);
+    }
+  }
+
   const key = settings?.unsplashKey?.trim();
 
   if (key) {

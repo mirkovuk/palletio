@@ -7,6 +7,7 @@
  */
 
 import { rgbToHex, hexToOklab, normalizeHex, oklabToRgbRaw } from './color.js';
+import { resolveProxy } from '../config.js';
 
 /* ---------------------------------------------------------------- images */
 
@@ -234,7 +235,11 @@ function parseASE(buffer) {
  *   2. No proxy: fall back to telling the user to paste source or drop a
  *      screenshot, both of which work with no infrastructure at all.
  */
-export async function extractFromURL(url, proxyBase) {
+export async function extractFromURL(url, settingsOrBase) {
+  const proxyBase = typeof settingsOrBase === 'string'
+    ? settingsOrBase
+    : resolveProxy(settingsOrBase);
+
   if (!proxyBase) {
     throw new Error(
       'Fetching a live site needs a proxy. Add one in Settings, or paste the page source / drop a screenshot instead.'

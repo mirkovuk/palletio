@@ -44,6 +44,82 @@ export default {
 
     const url = new URL(request.url);
 
+    /* ---- imagery ------------------------------------------------------ */
+
+    /**
+     * Unsplash search with the key held here rather than in the browser.
+     * This is the only arrangement where every visitor gets real imagery —
+     * a key entered in Settings lives in one person's localStorage.
+     *
+     * Note this spends YOUR Unsplash quota on everyone's behalf. Demo tier
+     * is 50 requests an hour across all visitors, which a handful of testers
+     * will exhaust. Apply for production access (5,000/hour) before opening
+     * it up widely.
+     */
+    if (url.pathname === '/images' && request.method === 'GET') {
+      if (!env.UNSPLASH_ACCESS_KEY) {
+        return Response.json({ error: 'No Unsplash key configured.' }, { status: 500, headers });
+      }
+
+      const params = new URLSearchParams({
+        query: url.searchParams.get('query') || 'abstract texture',
+        per_page: '12',
+        orientation: 'landscape',
+        content_filter: 'high',
+      });
+      const color = url.searchParams.get('color');
+      if (color) params.set('color', color);
+
+      const res = await fetch(`https://api.unsplash.com/search/photos?${params}`, {
+        headers: { Authorization: `Client-ID ${env.UNSPLASH_ACCESS_KEY}` },
+      });
+
+      if (!res.ok) {
+        return Response.json(
+          { error: `Unsplash returned ${res.status}` },
+          { status: res.status === 403 ? 429 : 502, headers }
+        );
+      }
+
+      const data = await res.json();
+      const utm = 'utm_source=palletio&utm_medium=referral';
+      const tag = (u) => (u ? u + (u.includes('?') ? '&' : '?') + utm : u);
+
+      const images = (data.results || []).map((photo) => ({
+        id: photo.id,
+        url: photo.urls.regular,
+        thumb: photo.urls.thumb,
+        credit: photo.user?.name || 'Unsplash',
+        creditUrl: tag(photo.user?.links?.html || 'https://unsplash.com'),
+        sourceName: 'Unsplash',
+        sourceUrl: tag('https://unsplash.com'),
+        link: photo.links?.html,
+        downloadLocation: photo.links?.download_location,
+      }));
+
+      return Response.json({ images }, {
+        headers: { ...headers, 'Cache-Control': 'public, max-age=900' },
+      });
+    }
+
+    /**
+     * Unsplash requires a call to a photo's download endpoint when it is
+     * actually used. Restricted to their own API host so this cannot be
+     * turned into a general-purpose request relay.
+     */
+    if (url.pathname === '/images/used' && request.method === 'GET') {
+      const target = url.searchParams.get('url') || '';
+      if (!target.startsWith('https://api.unsplash.com/')) {
+        return new Response('Rejected.', { status: 400, headers });
+      }
+      if (env.UNSPLASH_ACCESS_KEY) {
+        await fetch(target, {
+          headers: { Authorization: `Client-ID ${env.UNSPLASH_ACCESS_KEY}` },
+        }).catch(() => {});
+      }
+      return new Response(null, { status: 204, headers });
+    }
+
     /* ---- palette generation ------------------------------------------ */
     if (url.pathname === '/palette' && request.method === 'POST') {
       if (!env.ANTHROPIC_API_KEY) {

@@ -4,6 +4,7 @@ import {
   extractFromImage, extractFromText, importPaletteFile, extractFromURL,
 } from '../lib/extract.js';
 import { generateFromBrief } from '../lib/brief.js';
+import { resolveProxy } from '../config.js';
 import { IconX, IconCheck, IconSparkle } from './Icons.jsx';
 
 const TABS = [
@@ -169,7 +170,7 @@ export default function ImportModal({ onClose, onImport, settings, onToast }) {
 
         {tab === 'url' && (
           <div className="col">
-            {!settings.proxyUrl ? (
+            {!resolveProxy(settings) ? (
               <>
                 <div className="row" style={{ gap: 'var(--space-2)' }}>
                   <span className="badge" data-tone="warn">Not set up</span>
@@ -228,14 +229,14 @@ export default function ImportModal({ onClose, onImport, settings, onToast }) {
                 <div className="row" style={{ gap: 'var(--space-2)' }}>
                   <span className="badge" data-tone="good">Proxy connected</span>
                   <span className="panel-note mono" style={{ margin: 0, fontSize: 'var(--text-2xs)' }}>
-                    {settings.proxyUrl}
+                    {resolveProxy(settings)}
                   </span>
                 </div>
                 <button
                   className="btn btn-primary"
                   disabled={busy || !urlInput.trim()}
                   onClick={() => run(async () => {
-                    const found = await extractFromURL(urlInput, settings.proxyUrl);
+                    const found = await extractFromURL(urlInput, settings);
                     present(found.map((x) => x.hex), 'Ordered by how often each colour appears in the page and its stylesheets.');
                   })}
                 >

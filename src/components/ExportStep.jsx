@@ -55,7 +55,7 @@ export default function ExportStep({
   const pickImage = (img) => {
     setImage({ selected: img });
     // Required by the Unsplash API licence whenever a photo is put to use.
-    registerUse(img, settings?.unsplashKey);
+    registerUse(img, settings);
   };
 
   const loadImages = async () => {
@@ -69,7 +69,7 @@ export default function ExportStep({
       });
       const first = result.images[0] || null;
       setImage({ images: result.images, source: result.source, selected: first, on: true });
-      registerUse(first, settings?.unsplashKey);
+      registerUse(first, settings);
     } catch (e) {
       setImageError(e.message || 'Could not load imagery.');
     } finally {
@@ -325,7 +325,7 @@ export default function ExportStep({
                     ? ` · Monotone: shadows tinted ${shadow}, highlights left alone. Usually blends into a layout better than a full duotone.`
                     : ` · Shadows ${shadow}, highlights ${highlight}. Only colours that work in each slot are offered — a pale shadow or a near-black highlight does nothing.`
                 )}
-                {source === 'picsum' && ' · Using Lorem Picsum, which needs no key but ignores the subject. Add an Unsplash access key in Settings for images matched to your palette and vibe.'}
+                {source === 'picsum' && ' · Using Lorem Picsum, which needs no setup but ignores the subject entirely — so these are not matched to your palette. Real matching needs an Unsplash connection.'}
                 {source === 'unsplash' && ' · Photographs from Unsplash, filtered towards your hero colour.'}
               </p>
             </>
