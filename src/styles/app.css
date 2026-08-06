@@ -1351,6 +1351,12 @@ button { cursor: pointer; }
   background: var(--splash-bg);
   color: var(--splash-fg);
   overflow: hidden;
+  /* Flex, anchored to the bottom: the card sits low in the frame, the same
+     position the old full-width text layer used. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 /* Photograph layer: fills the entire splash edge to edge. It reserves no
@@ -1373,37 +1379,22 @@ button { cursor: pointer; }
 
 [data-theme='dark'] .splash-backdrop { background-blend-mode: screen; }
 
-/* Legibility layer: a gradient back to the base colour under where the text
-   sits. The photograph's tone at that exact point cannot be guaranteed —
-   it depends on viewport size and crop — so the headline's contrast should
-   not depend on it either. */
-.splash-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    transparent 42%,
-    color-mix(in oklab, var(--splash-bg) 72%, transparent) 68%,
-    var(--splash-bg) 92%
-  );
-  pointer-events: none;
-}
-
-/* Content layer: floats on top of both, anchored towards the bottom so the
-   composition still reads as "mark above, message below" even though all
-   three layers now occupy the exact same box. */
-.splash-inner {
+/* The card: a solid, self-contained panel floating over the backdrop —
+   a discrete object with its own edges, rather than loose text whose
+   legibility depended on the photo behind it. */
+.splash-card {
   position: relative;
   z-index: 1;
-  min-height: 100vh;
-  width: 100%;
+  width: min(92vw, 640px);
+  margin: var(--space-8) var(--space-4) clamp(var(--space-10), 8vh, var(--space-16));
+  background: var(--splash-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: clamp(var(--space-8), 6vw, var(--space-12)) clamp(var(--space-6), 5vw, var(--space-10));
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
   text-align: center;
-  padding: var(--space-8) var(--space-6) var(--space-12);
 }
 
 /* Only ever seen when the photograph fails to load, so it now behaves like

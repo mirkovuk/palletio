@@ -106,18 +106,17 @@ export default function Splash({
   return (
     <div className="splash" data-returning={returning || undefined}>
       {/*
-        Three stacked layers, bottom to top:
-          1. .splash itself — solid --splash-bg, the base colour and the
-             fallback if the photo never arrives.
-          2. .splash-backdrop — the photograph, absolutely positioned to
-             cover the entire viewport. Nothing here reserves layout space,
-             so there is no box for it to be cropped against and no edge to
-             seam — it is simply everything behind everything else.
-          3. .splash-scrim + .splash-inner — a soft gradient back to the base
-             colour, then the actual content, both floating on top. The
-             scrim exists so the headline stays legible regardless of what
-             happens to sit behind it — a colour tool with unreadable text
-             on its own front door would be a bad joke.
+        Two layers now, not three:
+          1. .splash-backdrop — the photograph, absolutely positioned to
+             cover the entire viewport. Untouched by everything below —
+             this is the piece that was already right.
+          2. .splash-card — a solid, self-contained panel floating on top.
+             Earlier this was a soft gradient fading the photo back to the
+             page colour behind loose text; a gradient's contrast depends on
+             exactly what is behind it, which is fragile, and it does not
+             read as a considered piece of the design the way an actual box
+             does. A solid card guarantees legibility outright and looks
+             like it was drawn on purpose.
       */}
       <div
         className="splash-backdrop"
@@ -126,12 +125,10 @@ export default function Splash({
         aria-label="Palletio"
       />
 
-      <div className="splash-scrim" aria-hidden="true" />
-
-      <div className="splash-inner">
-        {/* Shown only as a fallback, and only here — with no photograph to
-            be "the background", the name simply becomes the first line of
-            text rather than a separate full-bleed element. */}
+      <div className="splash-card">
+        {/* Shown only as a fallback — with no photograph to be "the
+            background", the name becomes the first line inside the card
+            rather than a separate full-bleed element. */}
         {imageFailed && (
           <span className="splash-mark-fallback" aria-hidden="true">Palletio</span>
         )}
