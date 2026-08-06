@@ -50,10 +50,10 @@ const VISITED_KEY = 'palletio.visited.v1';
 const DEFAULT_PALETTE = [
   '#FAF7F2', // page
   '#E7DFD1', // card surface
-  '#B4543C', // hero — terracotta
-  '#55693F', // accent — olive
-  '#DFAE55', // accent — ochre
-  '#1A1815', // ink
+  '#280fe7', // hero — terracotta
+  '#f19c25', // accent — olive
+  '#55dfd4', // accent — ochre
+  '#1f1e1b', // ink
 ];
 
 export default function App() {
