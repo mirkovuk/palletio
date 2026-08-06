@@ -105,25 +105,37 @@ export default function Splash({
 
   return (
     <div className="splash" data-returning={returning || undefined}>
-      {/* Full-bleed: a direct child of .splash rather than of the padded,
-          max-width .splash-inner column below, so the backdrop can run edge
-          to edge — including the top, with no padding above it — while the
-          headline and copy keep a readable measure underneath. */}
+      {/*
+        Three stacked layers, bottom to top:
+          1. .splash itself — solid --splash-bg, the base colour and the
+             fallback if the photo never arrives.
+          2. .splash-backdrop — the photograph, absolutely positioned to
+             cover the entire viewport. Nothing here reserves layout space,
+             so there is no box for it to be cropped against and no edge to
+             seam — it is simply everything behind everything else.
+          3. .splash-scrim + .splash-inner — a soft gradient back to the base
+             colour, then the actual content, both floating on top. The
+             scrim exists so the headline stays legible regardless of what
+             happens to sit behind it — a colour tool with unreadable text
+             on its own front door would be a bad joke.
+      */}
       <div
-        className="splash-mark"
+        className="splash-backdrop"
         style={imageStatus === 'ready' ? { backgroundImage: `url(${wordmark})` } : undefined}
         role="img"
         aria-label="Palletio"
-      >
-        {/* The typeset version is what someone on a slow connection sees
-            first, so it has to look deliberate rather than like a
-            placeholder waiting to be replaced. It keeps its own padded
-            measure, since a full-bleed line of giant serif type — unlike a
-            shaped wordmark — has no natural edge to run to. */}
-        {imageFailed && <span className="splash-mark-fallback" aria-hidden="true">Palletio</span>}
-      </div>
+      />
+
+      <div className="splash-scrim" aria-hidden="true" />
 
       <div className="splash-inner">
+        {/* Shown only as a fallback, and only here — with no photograph to
+            be "the background", the name simply becomes the first line of
+            text rather than a separate full-bleed element. */}
+        {imageFailed && (
+          <span className="splash-mark-fallback" aria-hidden="true">Palletio</span>
+        )}
+
         {returning ? (
           <>
             <h1 className="splash-headline">Welcome back, you peacock</h1>
