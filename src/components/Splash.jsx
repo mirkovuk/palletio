@@ -24,7 +24,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 const COPY = [
   'Palletio is a free colour palette tool.',
   'Start with your favourite hues, use an existing palette, or upload a screenshot of a site you like.',
-  'Preview your tones over tonally matched imagery, and get straight answers on contrast, readability and accessibility.',
+  'Preview your swatches over tonally-matching imagery, and get straight answers on contrast, readability and accessibility.',
   'Upload your logo and test it in every combination.',
 ];
 
@@ -154,7 +154,7 @@ export default function Splash({
           </>
         ) : (
           <>
-            <h1 className="splash-headline">Make colour, not war</h1>
+            <h1 className="splash-headline">I see a #FF0000 door and I want it painted #000000</h1>
 
             <button className="splash-start" onClick={finish}>
               Start here
