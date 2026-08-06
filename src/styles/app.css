@@ -1389,6 +1389,13 @@ button { cursor: pointer; }
      source image already carries its own matching gradient — harmless once
      the two colours line up, and a safety net if they ever drift apart. */
   background-blend-mode: multiply;
+  /* The box has a hard bottom edge wherever the height cap lands, and a
+     cover-sized background is cropped flat against it — no amount of
+     blend-mode fixes a crop line. Fading the last 18% of the box to the page
+     colour turns that hard edge into a dissolve, so the seam disappears
+     regardless of exactly where the crop falls. */
+  mask-image: linear-gradient(180deg, #000 0%, #000 82%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 82%, transparent 100%);
 }
 
 [data-theme='dark'] .splash-mark { background-blend-mode: screen; }
