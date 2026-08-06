@@ -155,6 +155,17 @@
   --button-primary-bg-hover: var(--n-800);
 
   --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--n-800);
+
+  /* ── Splash ───────────────────────────────────────────────────────────
+     The front door has its own surface, deliberately warmer than the tool
+     behind it. The achromatic rule applies to the working canvas — where a
+     coloured chrome would distort judgement of the swatches — not to a page
+     with no swatches on it. Change these four to re-theme the splash without
+     touching the app. */
+  --splash-bg: #fdf4e7;
+  --splash-fg: #14110c;
+  --splash-muted: #6b6455;
+  --splash-faint: #a89f8c;
 }
 
 /* ── Dark theme ───────────────────────────────────────────────────────
@@ -208,4 +219,12 @@
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.45);
 
   --focus-ring: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--n-100);
+
+  /* The splash keeps its warmth in dark mode but drops the luminance —
+     inverting it to near-black would throw away the one moment in the
+     product that is allowed to be atmospheric. */
+  --splash-bg: #17140e;
+  --splash-fg: #f7f1e4;
+  --splash-muted: #a49a86;
+  --splash-faint: #6b6455;
 }

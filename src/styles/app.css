@@ -1342,38 +1342,50 @@ button { cursor: pointer; }
 
 /* ────────────────────────────────────────────────────────────── splash */
 
+/* flex, not grid: the wordmark needs to stretch to the full width of .splash
+   for a true bleed, while .splash-inner below it keeps its own centred,
+   padded measure for the headline and copy. A single grid with place-items
+   center could not give one child full width and the next a constrained one
+   without a second wrapper. */
 .splash {
   position: relative;
   min-height: 100%;
   background: var(--splash-bg);
   color: var(--splash-fg);
-  display: grid;
-  place-items: center;
-  padding: var(--space-8) var(--space-6) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   overflow-y: auto;
 }
 
 .splash-inner {
   width: 100%;
   max-width: 1280px;
+  margin: 0 auto;
   display: grid;
   justify-items: center;
   text-align: center;
+  padding: 0 var(--space-6) var(--space-12);
 }
 
-/* The wordmark is sized against the viewport rather than a fixed width, so a
-   photographic mark drawn for a wide screen does not become the whole page on
-   a phone. Capped so it never outgrows its own resolution. */
+/* Full-bleed: no side padding, no max-width, so the image runs to both edges
+   of the viewport. Height is capped rather than width, since the risk on a
+   wide monitor is a wordmark tall enough to push the button off-screen, not
+   one that runs out of horizontal room. */
 .splash-mark {
-  width: min(92vw, 1180px);
+  width: 100%;
+  max-height: min(58vh, 720px);
   display: grid;
   place-items: center;
-  margin-bottom: clamp(var(--space-6), 4vw, var(--space-12));
+  overflow: hidden;
+  padding-top: var(--space-8);
 }
 
 .splash-mark-image {
   width: 100%;
-  height: auto;
+  height: 100%;
+  max-height: min(58vh, 720px);
+  object-fit: cover;
   display: block;
   /* Blend so a mark shot on cream sits on the splash colour without a seam.
      Harmless if the file has real transparency. */
@@ -1382,7 +1394,13 @@ button { cursor: pointer; }
 
 [data-theme='dark'] .splash-mark-image { mix-blend-mode: screen; }
 
+/* The fallback is typeset, not a photograph, so it has no natural edge to
+   bleed to — it keeps the padded, centred measure instead of running full
+   width, or single giant letters would end up flush against the browser
+   chrome with no visual reason to be there. */
 .splash-mark-fallback {
+  display: block;
+  padding: 0 var(--space-6);
   font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
   font-size: clamp(4rem, 17vw, 15rem);
@@ -1438,7 +1456,9 @@ button { cursor: pointer; }
 }
 
 @media (max-width: 640px) {
-  .splash { padding: var(--space-6) var(--space-4) var(--space-10); }
+  .splash-mark { max-height: 42vh; padding-top: var(--space-5); }
+  .splash-mark-image { max-height: 42vh; }
+  .splash-inner { padding: 0 var(--space-4) var(--space-10); }
   .splash-copy { font-size: var(--text-xs); }
   .splash-version { position: static; margin-top: var(--space-8); }
 }

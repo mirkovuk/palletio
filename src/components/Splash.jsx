@@ -86,26 +86,32 @@ export default function Splash({
 
   return (
     <div className="splash" data-returning={returning || undefined}>
-      <div className="splash-inner">
-        <div className="splash-mark">
-          {/* The typeset version is what someone on a slow connection sees
-              first, so it has to look deliberate rather than like a
-              placeholder waiting to be replaced. */}
-          {imageFailed ? (
-            <span className="splash-mark-fallback" aria-hidden="true">Palletio</span>
-          ) : (
-            <img
-              src={wordmark}
-              alt="Palletio"
-              className="splash-mark-image"
-              fetchPriority="high"
-              decoding="async"
-              onError={() => setImageFailed(true)}
-            />
-          )}
-          {imageFailed && <span className="visually-hidden">Palletio</span>}
-        </div>
+      {/* Full-bleed: a direct child of .splash rather than of the padded,
+          max-width .splash-inner column below, so the image can run edge to
+          edge while the headline and copy stay in a readable measure. */}
+      <div className="splash-mark">
+        {/* The typeset version is what someone on a slow connection sees
+            first, so it has to look deliberate rather than like a
+            placeholder waiting to be replaced. It keeps the same padded
+            width as the text column, since a full-bleed line of giant serif
+            type (rather than a shaped wordmark) has no natural edge to run
+            to. */}
+        {imageFailed ? (
+          <span className="splash-mark-fallback" aria-hidden="true">Palletio</span>
+        ) : (
+          <img
+            src={wordmark}
+            alt="Palletio"
+            className="splash-mark-image"
+            fetchPriority="high"
+            decoding="async"
+            onError={() => setImageFailed(true)}
+          />
+        )}
+        {imageFailed && <span className="visually-hidden">Palletio</span>}
+      </div>
 
+      <div className="splash-inner">
         {returning ? (
           <>
             <h1 className="splash-headline">Welcome back, you peacock</h1>
