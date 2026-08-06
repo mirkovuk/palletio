@@ -41,9 +41,28 @@ export default function Splash({
   version = 'v0.1 2026',
   wordmark = './wordmark.webp',
 }) {
-  const [imageFailed, setImageFailed] = useState(false);
+  /* Loaded via a detached Image() rather than rendered as an <img>, so it can
+     be applied as a CSS background instead of a foreground element. A
+     background-image fills its box exactly — top and sides included, no
+     padding to leave a gap and no element edge to crop against — which an
+     <img> with object-fit only approximates. The probe still gives us
+     load/error state for the typeset fallback. */
+  const [imageStatus, setImageStatus] = useState('loading'); // loading | ready | failed
   const [progress, setProgress] = useState(0);
   const doneRef = useRef(false);
+
+  useEffect(() => {
+    const probe = new Image();
+    probe.onload = () => setImageStatus('ready');
+    probe.onerror = () => setImageStatus('failed');
+    probe.src = wordmark;
+    return () => {
+      probe.onload = null;
+      probe.onerror = null;
+    };
+  }, [wordmark]);
+
+  const imageFailed = imageStatus === 'failed';
 
   const finish = useCallback(() => {
     if (doneRef.current) return;
@@ -87,28 +106,21 @@ export default function Splash({
   return (
     <div className="splash" data-returning={returning || undefined}>
       {/* Full-bleed: a direct child of .splash rather than of the padded,
-          max-width .splash-inner column below, so the image can run edge to
-          edge while the headline and copy stay in a readable measure. */}
-      <div className="splash-mark">
+          max-width .splash-inner column below, so the backdrop can run edge
+          to edge — including the top, with no padding above it — while the
+          headline and copy keep a readable measure underneath. */}
+      <div
+        className="splash-mark"
+        style={imageStatus === 'ready' ? { backgroundImage: `url(${wordmark})` } : undefined}
+        role="img"
+        aria-label="Palletio"
+      >
         {/* The typeset version is what someone on a slow connection sees
             first, so it has to look deliberate rather than like a
-            placeholder waiting to be replaced. It keeps the same padded
-            width as the text column, since a full-bleed line of giant serif
-            type (rather than a shaped wordmark) has no natural edge to run
-            to. */}
-        {imageFailed ? (
-          <span className="splash-mark-fallback" aria-hidden="true">Palletio</span>
-        ) : (
-          <img
-            src={wordmark}
-            alt="Palletio"
-            className="splash-mark-image"
-            fetchPriority="high"
-            decoding="async"
-            onError={() => setImageFailed(true)}
-          />
-        )}
-        {imageFailed && <span className="visually-hidden">Palletio</span>}
+            placeholder waiting to be replaced. It keeps its own padded
+            measure, since a full-bleed line of giant serif type — unlike a
+            shaped wordmark — has no natural edge to run to. */}
+        {imageFailed && <span className="splash-mark-fallback" aria-hidden="true">Palletio</span>}
       </div>
 
       <div className="splash-inner">

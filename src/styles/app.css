@@ -1368,31 +1368,30 @@ button { cursor: pointer; }
   padding: 0 var(--space-6) var(--space-12);
 }
 
-/* Full-bleed: no side padding, no max-width, so the image runs to both edges
-   of the viewport. Height is capped rather than width, since the risk on a
-   wide monitor is a wordmark tall enough to push the button off-screen, not
-   one that runs out of horizontal room. */
+/* Full-bleed backdrop, top and sides — no padding, no gap, nothing for the
+   image to be inset from. Sized as a background rather than a foreground
+   element: background-image + cover always fills this box exactly, where an
+   <img> only approximates it and leaves a seam wherever its own edges land.
+   Height is capped rather than width, since the risk on a wide monitor is a
+   wordmark tall enough to push the button off-screen, not one that runs out
+   of horizontal room. */
 .splash-mark {
   width: 100%;
-  max-height: min(58vh, 720px);
+  height: min(58vh, 720px);
   display: grid;
   place-items: center;
   overflow: hidden;
-  padding-top: var(--space-8);
+  background-color: var(--splash-bg);
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
+  /* Kept as a light multiply for consistency across screens even though the
+     source image already carries its own matching gradient — harmless once
+     the two colours line up, and a safety net if they ever drift apart. */
+  background-blend-mode: multiply;
 }
 
-.splash-mark-image {
-  width: 100%;
-  height: 100%;
-  max-height: min(58vh, 720px);
-  object-fit: cover;
-  display: block;
-  /* Blend so a mark shot on cream sits on the splash colour without a seam.
-     Harmless if the file has real transparency. */
-  mix-blend-mode: multiply;
-}
-
-[data-theme='dark'] .splash-mark-image { mix-blend-mode: screen; }
+[data-theme='dark'] .splash-mark { background-blend-mode: screen; }
 
 /* The fallback is typeset, not a photograph, so it has no natural edge to
    bleed to — it keeps the padded, centred measure instead of running full
@@ -1456,8 +1455,7 @@ button { cursor: pointer; }
 }
 
 @media (max-width: 640px) {
-  .splash-mark { max-height: 42vh; padding-top: var(--space-5); }
-  .splash-mark-image { max-height: 42vh; }
+  .splash-mark { height: 42vh; }
   .splash-inner { padding: 0 var(--space-4) var(--space-10); }
   .splash-copy { font-size: var(--text-xs); }
   .splash-version { position: static; margin-top: var(--space-8); }
