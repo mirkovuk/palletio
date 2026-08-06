@@ -1379,22 +1379,67 @@ button { cursor: pointer; }
 
 [data-theme='dark'] .splash-backdrop { background-blend-mode: screen; }
 
-/* The card: a solid, self-contained panel floating over the backdrop —
-   a discrete object with its own edges, rather than loose text whose
-   legibility depended on the photo behind it. */
+/* Content column: no background, no border, no shadow — the text sits
+   directly on the backdrop. It is a positioning wrapper only. */
 .splash-card {
   position: relative;
   z-index: 1;
-  width: min(92vw, 640px);
-  margin: var(--space-8) var(--space-4) clamp(var(--space-10), 8vh, var(--space-16));
-  background: var(--splash-bg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: clamp(var(--space-8), 6vw, var(--space-12)) clamp(var(--space-6), 5vw, var(--space-10));
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-12);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+/* ── Text styles, unchanged from the original ─────────────────────────── */
+
+.splash-headline {
+  font-size: clamp(1.5rem, 4.2vw, 3.25rem);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin: 0 0 clamp(var(--space-8), 5vw, var(--space-16));
+  line-height: 1.05;
+}
+
+.splash-start {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: gap var(--duration-base) var(--ease);
+}
+.splash-start:hover { gap: var(--space-5); }
+.splash-start svg { transition: transform var(--duration-base) var(--ease); }
+.splash-start:hover svg { transform: translateX(2px); }
+
+.splash-copy {
+  display: grid;
+  gap: 2px;
+  margin: clamp(var(--space-10), 7vw, var(--space-16)) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--splash-muted);
+  max-width: 62ch;
+}
+
+.splash-version {
+  position: absolute;
+  left: var(--space-5);
+  bottom: var(--space-5);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  color: var(--splash-faint);
+  text-transform: uppercase;
 }
 
 /* Only ever seen when the photograph fails to load, so it now behaves like
