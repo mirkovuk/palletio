@@ -78,8 +78,6 @@ button { cursor: pointer; }
   flex-shrink: 0;
 }
 
-.header-spacer { flex: 1; }
-
 .header-actions { display: flex; align-items: center; gap: var(--space-2); }
 
 .header-name {
@@ -1387,7 +1385,7 @@ button { cursor: pointer; }
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6) 100px);
+  padding: var(--space-8) var(--space-6) var(--space-12);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1397,7 +1395,7 @@ button { cursor: pointer; }
 /* ── Text styles, unchanged from the original ─────────────────────────── */
 
 .splash-headline {
-  font-size: clamp(1.7rem, 4.2vw, 3.25rem);
+  font-size: clamp(1.5rem, 4.2vw, 3.25rem);
   font-weight: var(--weight-bold);
   letter-spacing: -0.02em;
   text-transform: uppercase;
@@ -1495,4 +1493,60 @@ button { cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {
   .splash-progress { display: none; }
+}
+
+/* ─────────────────────────────────────────────────────── splash tagline */
+
+/* General Sans against Satoshi body copy: the two are close cousins, so the
+   pairing works through role contrast — semibold display size versus small
+   regular text — not through the faces themselves. Sentence case per the
+   design. */
+.splash-headline {
+  font-family: 'General Sans', 'Satoshi', system-ui, sans-serif;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* The swatch and its hex are one word as far as line-breaking is concerned:
+   a break between them reads as two mistakes rather than one. */
+.tagline-swatch {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28em;
+  white-space: nowrap;
+  cursor: pointer;
+  position: relative;
+  border-radius: var(--radius-sm);
+}
+
+/* The native input does the picking; the chip and hex are its visible face.
+   Hidden with the clip pattern rather than display:none so it stays
+   focusable and the keyboard can still open the picker. */
+.tagline-swatch input[type='color'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tagline-swatch:has(input:focus-visible) {
+  outline: 2px solid var(--splash-fg);
+  outline-offset: 4px;
+}
+
+.tagline-swatch-chip {
+  width: 0.72em;
+  height: 0.72em;
+  border-radius: 0.16em;
+  align-self: center;
+  border: 1px solid color-mix(in oklab, var(--splash-fg) 18%, transparent);
+  transition: transform var(--duration-base) var(--ease);
+}
+
+.tagline-swatch:hover .tagline-swatch-chip { transform: scale(1.12); }
+
+.tagline-swatch-hex {
+  font-size: 0.82em;
+  letter-spacing: -0.01em;
 }

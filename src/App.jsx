@@ -7,6 +7,7 @@ import ExportStep from './components/ExportStep.jsx';
 import Insights from './components/Insights.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import Splash from './components/Splash.jsx';
+import Logo from './components/Logo.jsx';
 import {
   IconPalette, IconSparkle, IconEye, IconTag, IconDownload,
   IconSun, IconMoon, IconSettings,
@@ -50,10 +51,10 @@ const VISITED_KEY = 'palletio.visited.v1';
 const DEFAULT_PALETTE = [
   '#FAF7F2', // page
   '#E7DFD1', // card surface
-  '#280fe7', // hero — terracotta
-  '#f19c25', // accent — olive
-  '#55dfd4', // accent — ochre
-  '#1f1e1b', // ink
+  '#F71F1F', // hero — the door
+  '#55693F', // accent — olive
+  '#DFAE55', // accent — ochre
+  '#121111', // ink — the paint
 ];
 
 export default function App() {
@@ -160,7 +161,18 @@ export default function App() {
 
   const showToast = useCallback((message) => setToast(message), []);
 
-  const enterApp = useCallback(() => {
+  const enterApp = useCallback((seed) => {
+    /* Two colours picked on the splash become the working palette, wrapped
+       in the neutrals every palette needs anyway. Only ever a first-visit
+       path — returning visitors skip the tagline and get the preset. */
+    if (Array.isArray(seed) && seed.length) {
+      /* Deduped across the whole palette, not just the picks — someone who
+         chooses the ink colour as their paint should not start with it
+         twice. */
+      setColors([...new Set(
+        ['#FAF7F2', '#E7DFD1', ...seed, '#121111'].map((hex) => hex.toUpperCase())
+      )]);
+    }
     setShowSplash(false);
     try {
       localStorage.setItem(VISITED_KEY, '1');
@@ -270,24 +282,30 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1 className="header-brand">Palletio</h1>
+        <h1 className="header-brand">
+          <Logo height={46} />
+          <span className="visually-hidden">Palletio</span>
+        </h1>
 
-        <div className="header-strip" aria-hidden="true">
-          {colors.slice(0, 12).map((hex, i) => (
-            <span key={`${hex}-${i}`} className="header-chip" style={{ background: hex }} />
-          ))}
+        {/* Centre group: identity of the palette being worked on, in the
+            middle of the frame like a document title, rather than reading as
+            part of the branding on the left. */}
+        <div className="header-center">
+          <input
+            className="header-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-label="Palette name"
+          />
+          <div className="header-strip" aria-hidden="true">
+            {colors.slice(0, 12).map((hex, i) => (
+              <span key={`${hex}-${i}`} className="header-chip" style={{ background: hex }} />
+            ))}
+          </div>
         </div>
 
-        <input
-          className="header-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          aria-label="Palette name"
-        />
-
-        <span className="header-spacer" />
-
-        <div className="health">
+        <div className="header-right">
+          <div className="health">
           <span className="health-label">Health</span>
           <div className="health-meter">
             <span className="health-fill" data-tone={band.tone} style={{ width: `${score}%` }} />
@@ -307,6 +325,7 @@ export default function App() {
           <button className="btn-icon" onClick={() => setSettingsOpen(true)} aria-label="Settings">
             <IconSettings />
           </button>
+          </div>
         </div>
       </header>
 

@@ -24,11 +24,42 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 const COPY = [
   'Palletio is a free colour palette tool.',
   'Start with your favourite hues, use an existing palette, or upload a screenshot of a site you like.',
-  'Preview your swatches over tonally-matching imagery, and get straight answers on contrast, readability and accessibility.',
+  'Preview your tones over tonally matched imagery, and get straight answers on contrast, readability and accessibility.',
   'Upload your logo and test it in every combination.',
 ];
 
 const DURATION = 1900;
+
+/**
+ * The tagline's two colours. Defaults are the hero and ink of the preset
+ * palette, so the joke lands twice — it's the song, and it's literally the
+ * palette behind the door. Both are live pickers: choose a powder pink and
+ * a baby blue here and that is the palette the tool opens with.
+ */
+const DEFAULT_DOOR = '#F71F1F';
+const DEFAULT_PAINT = '#121111';
+
+/**
+ * A swatch + hex unit inside the headline. The wrapper is a <label> around a
+ * visually hidden native colour input — the browser's picker for free, full
+ * keyboard support, works on mobile, and no popover of our own to position
+ * inside a headline. white-space: nowrap because a line break between a
+ * swatch and its hex reads as two mistakes, not one.
+ */
+function TaglineSwatch({ value, onChange, label }) {
+  return (
+    <label className="tagline-swatch" title={`${label} — click to change`}>
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value.toUpperCase())}
+        aria-label={label}
+      />
+      <span className="tagline-swatch-chip" style={{ background: value }} />
+      <span className="tagline-swatch-hex mono">{value.toUpperCase()}</span>
+    </label>
+  );
+}
 
 function prefersReducedMotion() {
   return typeof window !== 'undefined'
@@ -51,6 +82,13 @@ export default function Splash({
   const [progress, setProgress] = useState(0);
   const doneRef = useRef(false);
 
+  const [door, setDoor] = useState(DEFAULT_DOOR);
+  const [paint, setPaint] = useState(DEFAULT_PAINT);
+  /* Only a changed pair seeds the palette — untouched defaults mean the
+     visitor gets the full preset, accents and all, not a two-colour copy
+     of it. */
+  const dirty = door !== DEFAULT_DOOR || paint !== DEFAULT_PAINT;
+
   useEffect(() => {
     const probe = new Image();
     probe.onload = () => setImageStatus('ready');
@@ -67,8 +105,8 @@ export default function Splash({
   const finish = useCallback(() => {
     if (doneRef.current) return;
     doneRef.current = true;
-    onStart();
-  }, [onStart]);
+    onStart(dirty ? [door, paint] : null);
+  }, [onStart, dirty, door, paint]);
 
   useEffect(() => {
     if (!returning) return;
@@ -154,7 +192,12 @@ export default function Splash({
           </>
         ) : (
           <>
-            <h1 className="splash-headline">I see a #FF0000 door and I want it painted #000000</h1>
+            <h1 className="splash-headline">
+              I see a{' '}
+              <TaglineSwatch value={door} onChange={setDoor} label="Door colour" />
+              {' '}door and I want it painted{' '}
+              <TaglineSwatch value={paint} onChange={setPaint} label="Paint colour" />
+            </h1>
 
             <button className="splash-start" onClick={finish}>
               Start here
