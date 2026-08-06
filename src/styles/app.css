@@ -1387,7 +1387,7 @@ button { cursor: pointer; }
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6) var(--space-12);
+  padding: var(--space-8) var(--space-6) var(--space-100);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1397,7 +1397,7 @@ button { cursor: pointer; }
 /* ── Text styles, unchanged from the original ─────────────────────────── */
 
 .splash-headline {
-  font-size: clamp(1.5rem, 4.2vw, 3.25rem);
+  font-size: clamp(1.7rem, 4.2vw, 3.25rem);
   font-weight: var(--weight-bold);
   letter-spacing: -0.02em;
   text-transform: uppercase;
