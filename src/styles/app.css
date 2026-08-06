@@ -1342,130 +1342,82 @@ button { cursor: pointer; }
 
 /* ────────────────────────────────────────────────────────────── splash */
 
-/* flex, not grid: the wordmark needs to stretch to the full width of .splash
-   for a true bleed, while .splash-inner below it keeps its own centred,
-   padded measure for the headline and copy. A single grid with place-items
-   center could not give one child full width and the next a constrained one
-   without a second wrapper. */
+/* Base layer: solid colour, full viewport. Everything else is stacked on
+   top of this with position: absolute, so it is also what shows if the
+   photograph never loads. */
 .splash {
   position: relative;
-  min-height: 100%;
+  min-height: 100vh;
   background: var(--splash-bg);
   color: var(--splash-fg);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  overflow-y: auto;
-}
-
-.splash-inner {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  padding: 0 var(--space-6) var(--space-12);
-}
-
-/* Full-bleed backdrop, top and sides — no padding, no gap, nothing for the
-   image to be inset from. Sized as a background rather than a foreground
-   element: background-image + cover always fills this box exactly, where an
-   <img> only approximates it and leaves a seam wherever its own edges land.
-   Height is capped rather than width, since the risk on a wide monitor is a
-   wordmark tall enough to push the button off-screen, not one that runs out
-   of horizontal room. */
-.splash-mark {
-  width: 100%;
-  height: min(58vh, 720px);
-  display: grid;
-  place-items: center;
   overflow: hidden;
+}
+
+/* Photograph layer: fills the entire splash edge to edge. It reserves no
+   layout space of its own — position: absolute takes it out of flow
+   entirely — so there is no box for a cover-sized image to be cropped
+   against and nothing for a seam to appear at. It is simply the furthest
+   -back thing on the screen. */
+.splash-backdrop {
+  position: absolute;
+  inset: 0;
   background-color: var(--splash-bg);
   background-size: cover;
-  background-position: top center;
+  background-position: center;
   background-repeat: no-repeat;
   /* Kept as a light multiply for consistency across screens even though the
      source image already carries its own matching gradient — harmless once
      the two colours line up, and a safety net if they ever drift apart. */
   background-blend-mode: multiply;
-  /* The box has a hard bottom edge wherever the height cap lands, and a
-     cover-sized background is cropped flat against it — no amount of
-     blend-mode fixes a crop line. Fading the last 18% of the box to the page
-     colour turns that hard edge into a dissolve, so the seam disappears
-     regardless of exactly where the crop falls. */
-  mask-image: linear-gradient(180deg, #000 0%, #000 82%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 82%, transparent 100%);
 }
 
-[data-theme='dark'] .splash-mark { background-blend-mode: screen; }
+[data-theme='dark'] .splash-backdrop { background-blend-mode: screen; }
 
-/* The fallback is typeset, not a photograph, so it has no natural edge to
-   bleed to — it keeps the padded, centred measure instead of running full
-   width, or single giant letters would end up flush against the browser
-   chrome with no visual reason to be there. */
+/* Legibility layer: a gradient back to the base colour under where the text
+   sits. The photograph's tone at that exact point cannot be guaranteed —
+   it depends on viewport size and crop — so the headline's contrast should
+   not depend on it either. */
+.splash-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 42%,
+    color-mix(in oklab, var(--splash-bg) 72%, transparent) 68%,
+    var(--splash-bg) 92%
+  );
+  pointer-events: none;
+}
+
+/* Content layer: floats on top of both, anchored towards the bottom so the
+   composition still reads as "mark above, message below" even though all
+   three layers now occupy the exact same box. */
+.splash-inner {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: center;
+  padding: var(--space-8) var(--space-6) var(--space-12);
+}
+
+/* Only ever seen when the photograph fails to load, so it now behaves like
+   any other line of splash content rather than a full-bleed element with
+   its own edge to worry about. */
 .splash-mark-fallback {
   display: block;
-  padding: 0 var(--space-6);
   font-family: 'Instrument Serif', Georgia, serif;
   font-style: italic;
-  font-size: clamp(4rem, 17vw, 15rem);
-  line-height: 0.9;
+  font-size: clamp(3rem, 10vw, 7rem);
+  line-height: 0.95;
   letter-spacing: -0.02em;
-  opacity: 0.9;
-}
-
-.splash-headline {
-  font-size: clamp(1.5rem, 4.2vw, 3.25rem);
-  font-weight: var(--weight-bold);
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  margin: 0 0 clamp(var(--space-8), 5vw, var(--space-16));
-  line-height: 1.05;
-}
-
-.splash-start {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  background: transparent;
-  border: none;
-  color: inherit;
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
-  padding: var(--space-3) var(--space-2);
-  border-radius: var(--radius-sm);
-  transition: gap var(--duration-base) var(--ease);
-}
-.splash-start:hover { gap: var(--space-5); }
-.splash-start svg { transition: transform var(--duration-base) var(--ease); }
-.splash-start:hover svg { transform: translateX(2px); }
-
-.splash-copy {
-  display: grid;
-  gap: 2px;
-  margin: clamp(var(--space-10), 7vw, var(--space-16)) 0 0;
-  font-size: var(--text-sm);
-  line-height: var(--leading-normal);
-  color: var(--splash-muted);
-  max-width: 62ch;
-}
-
-.splash-version {
-  position: absolute;
-  left: var(--space-5);
-  bottom: var(--space-5);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-wide);
-  color: var(--splash-faint);
-  text-transform: uppercase;
-}
-
-@media (max-width: 640px) {
-  .splash-mark { height: 42vh; }
-  .splash-inner { padding: 0 var(--space-4) var(--space-10); }
-  .splash-copy { font-size: var(--text-xs); }
-  .splash-version { position: static; margin-top: var(--space-8); }
+  opacity: 0.92;
+  margin-bottom: clamp(var(--space-6), 4vw, var(--space-10));
 }
 
 /* Returning-visitor variant. The bar is scaled rather than width-animated so
