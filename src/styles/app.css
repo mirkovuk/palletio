@@ -1396,11 +1396,8 @@ button { cursor: pointer; }
   inset: 0;
   background-color: var(--splash-bg);
   background-size: cover;
-  background-position: center;
+  background-position: top;
   background-repeat: no-repeat;
-  /* Kept as a light multiply for consistency across screens even though the
-     source image already carries its own matching gradient — harmless once
-     the two colours line up, and a safety net if they ever drift apart. */
   background-blend-mode: multiply;
 }
 
